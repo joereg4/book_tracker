@@ -14,12 +14,9 @@ class Book(Base):
     isbn = Column(String)
     isbn13 = Column(String)
     published_date = Column(String)
-    cover_url = Column(String)
-    open_library_id = Column(String, unique=True)
     status = Column(String, nullable=False, default='to_read')
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     date_read = Column(DateTime, nullable=True)
-    
     google_books_id = Column(String)
     etag = Column(String)
     self_link = Column(String)
