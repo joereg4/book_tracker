@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Import Preview</h1>
+
+{% if books %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Books to Import ({{ books|length }})</h5>
+            
+            <form method="POST" action="{{ url_for('import_goodreads') }}">
+                <input type="hidden" name="preview" value="true">
+                <button type="submit" class="btn btn-primary mb-3">
+                    Confirm Import
+                </button>
+                
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Status</th>
+                                <th>ISBN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for book in books %}
+                            <tr>
+                                <td>{{ book.title }}</td>
+                                <td>{{ book.authors }}</td>
+                                <td>{{ book.status }}</td>
+                                <td>{{ book.isbn13 or book.isbn }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endif %}
+{% endblock %} 

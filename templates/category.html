@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Category: {{ category }}</h2>
+        <form action="{{ url_for('search') }}" method="GET" class="d-flex gap-2">
+            <input type="hidden" name="query" value='subject:"{{ category }}"'>
+            <input type="hidden" name="page" value="1">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Discover More {{ category }} Books
+            </button>
+        </form>
+    </div>
+
+    {% if books %}
+        <div class="row">
+            {% for book in books %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex gap-3">
+                            {% if book.thumbnail %}
+                            <img src="{{ book.thumbnail }}" class="img-thumbnail" 
+                                 alt="{{ book.title }}" style="width: 100px; height: auto;">
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">{{ book.title }}</h5>
+                                <p class="card-text text-muted">{{ book.authors }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        {% if book.date_read %}
+                                            Read on: {{ book.date_read.strftime('%Y-%m-%d') }}
+                                        {% else %}
+                                            Added on: {{ book.created_at.strftime('%Y-%m-%d') }}
+                                        {% endif %}
+                                        {% if book.page_count %} • {{ book.page_count }} pages{% endif %}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No books found in this category. Try discovering new ones!
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

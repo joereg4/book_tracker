@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <a href="{{ url_for('book_detail', book_id=book.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Book Details
+        </a>
+    </div>
+
+    <h2>Edit Book Details</h2>
+
+    <form method="POST" class="mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Current Shelf</label>
+                    <input type="text" class="form-control" value="{{ book.status|replace('_', ' ')|title }}" disabled>
+                </div>
+
+                {% if book.status == 'read' %}
+                <div class="mb-3">
+                    <label for="date_read" class="form-label">Date Read</label>
+                    <input type="date" class="form-control" id="date_read" name="date_read" 
+                           value="{{ book.date_read.strftime('%Y-%m-%d') if book.date_read else '' }}">
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="google_books_id" class="form-label">Google Books ID</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="google_books_id" name="google_books_id" 
+                               value="{{ book.google_books_id }}"
+                               placeholder="Enter Google Books ID to refresh data">
+                        <button type="submit" name="refresh_google" class="btn btn-outline-secondary" 
+                                formnovalidate>
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                    <small class="text-muted">Change this ID or click refresh to fetch new data from Google Books</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" 
+                           value="{{ preview_data.title if preview_data else book.title }}" required>
+                    {% if preview_data and preview_data.title != book.title %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="authors" class="form-label">Authors</label>
+                    <input type="text" class="form-control" id="authors" name="authors" 
+                           value="{{ preview_data.authors|join(', ') if preview_data else book.authors }}">
+                    {% if preview_data and preview_data.authors|join(', ') != book.authors %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" 
+                              rows="4">{{ preview_data.description if preview_data else book.description }}</textarea>
+                    {% if preview_data and preview_data.description != book.description %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="published_date" class="form-label">Published Date</label>
+                    <input type="text" class="form-control" id="published_date" name="published_date" 
+                           value="{{ preview_data.published_date if preview_data else book.published_date }}">
+                    {% if preview_data and preview_data.published_date != book.published_date %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="page_count" class="form-label">Page Count</label>
+                    <input type="number" class="form-control" id="page_count" name="page_count" 
+                           value="{{ preview_data.page_count if preview_data else book.page_count }}">
+                    {% if preview_data and preview_data.page_count != book.page_count %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="publisher" class="form-label">Publisher</label>
+                    <input type="text" class="form-control" id="publisher" name="publisher" 
+                           value="{{ book.publisher }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="isbn" class="form-label">ISBN-10</label>
+                    <input type="text" class="form-control" id="isbn" name="isbn" 
+                           value="{{ book.isbn }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="isbn13" class="form-label">ISBN-13</label>
+                    <input type="text" class="form-control" id="isbn13" name="isbn13" 
+                           value="{{ book.isbn13 }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="thumbnail" class="form-label">Thumbnail URL</label>
+                    <input type="url" class="form-control" id="thumbnail" name="thumbnail" 
+                           value="{{ book.thumbnail }}">
+                </div>
+
+                {% if book.thumbnail %}
+                <div class="mb-3">
+                    <label class="form-label">Current Thumbnail Preview</label>
+                    <img src="{{ book.thumbnail|replace('http:', 'https:') }}" 
+                         class="img-thumbnail" 
+                         alt="{{ book.title }}"
+                         style="max-width: 150px;">
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="etag" class="form-label">ETag</label>
+                    <input type="text" class="form-control" id="etag" name="etag" 
+                           value="{{ preview_data.etag if preview_data else book.etag }}">
+                    {% if preview_data and preview_data.etag != book.etag %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="self_link" class="form-label">Self Link</label>
+                    <input type="url" class="form-control" id="self_link" name="self_link" 
+                           value="{{ preview_data.self_link if preview_data else book.self_link }}">
+                    {% if preview_data and preview_data.self_link != book.self_link %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="print_type" class="form-label">Print Type</label>
+                    <input type="text" class="form-control" id="print_type" name="print_type" 
+                           value="{{ book.print_type }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="categories" class="form-label">Categories</label>
+                    <input type="text" class="form-control" id="categories" name="categories" 
+                           value="{{ book.categories }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="maturity_rating" class="form-label">Maturity Rating</label>
+                    <input type="text" class="form-control" id="maturity_rating" name="maturity_rating" 
+                           value="{{ preview_data.maturity_rating if preview_data else book.maturity_rating }}">
+                    {% if preview_data and preview_data.maturity_rating != book.maturity_rating %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="language" class="form-label">Language</label>
+                    <input type="text" class="form-control" id="language" name="language" 
+                           value="{{ preview_data.language if preview_data else book.language }}">
+                    {% if preview_data and preview_data.language != book.language %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="preview_link" class="form-label">Preview Link</label>
+                    <input type="url" class="form-control" id="preview_link" name="preview_link" 
+                           value="{{ preview_data.preview_link if preview_data else book.preview_link }}">
+                    {% if preview_data and preview_data.preview_link != book.preview_link %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="info_link" class="form-label">Info Link</label>
+                    <input type="url" class="form-control" id="info_link" name="info_link" 
+                           value="{{ preview_data.info_link if preview_data else book.info_link }}">
+                    {% if preview_data and preview_data.info_link != book.info_link %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="canonical_volume_link" class="form-label">Canonical Volume Link</label>
+                    <input type="url" class="form-control" id="canonical_volume_link" name="canonical_volume_link" 
+                           value="{{ preview_data.canonical_volume_link if preview_data else book.canonical_volume_link }}">
+                    {% if preview_data and preview_data.canonical_volume_link != book.canonical_volume_link %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="small_thumbnail" class="form-label">Small Thumbnail URL</label>
+                    <input type="url" class="form-control" id="small_thumbnail" name="small_thumbnail" 
+                           value="{{ preview_data.small_thumbnail if preview_data else book.small_thumbnail }}">
+                    {% if preview_data and preview_data.small_thumbnail != book.small_thumbnail %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="content_version" class="form-label">Content Version</label>
+                    <input type="text" class="form-control" id="content_version" name="content_version" 
+                           value="{{ preview_data.content_version if preview_data else book.content_version }}">
+                    {% if preview_data and preview_data.content_version != book.content_version %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="is_ebook" class="form-label">Is Ebook</label>
+                    <select class="form-select" id="is_ebook" name="is_ebook">
+                        <option value="true" {% if preview_data and preview_data.is_ebook or (not preview_data and book.is_ebook) %}selected{% endif %}>Yes</option>
+                        <option value="false" {% if preview_data and not preview_data.is_ebook or (not preview_data and not book.is_ebook) %}selected{% endif %}>No</option>
+                    </select>
+                    {% if preview_data and preview_data.is_ebook != book.is_ebook %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="submit" name="cancel" class="btn btn-outline-secondary ms-2">Cancel</button>
+        </div>
+    </form>
+</div>
+{% endblock %} 
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle refresh button click
+    const form = document.querySelector('form');
+    const refreshButton = document.querySelector('button[name="refresh_google"]');
+    
+    refreshButton.addEventListener('click', function(e) {
+        e.preventDefault();  // Prevent default form submission
+        
+        // Create a new hidden input to indicate refresh
+        const refreshInput = document.createElement('input');
+        refreshInput.type = 'hidden';
+        refreshInput.name = 'refresh_google';
+        refreshInput.value = 'true';
+        form.appendChild(refreshInput);
+        
+        // Submit the form without validation
+        form.submit();
+    });
+});
+</script> 

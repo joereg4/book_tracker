@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Reading Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Reading Overview</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">To Read</h6>
+                                <small class="text-muted">Your reading list</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ to_read|length }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">Currently Reading</h6>
+                                <small class="text-muted">In progress</small>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill">{{ reading|length }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">Completed</h6>
+                                <small class="text-muted">Books finished</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill">{{ read|length }}</span>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{{ url_for('search') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add New Book
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Currently Reading</h5>
+                    {% if reading %}
+                        <div class="list-group list-group-flush">
+                            {% for book in reading %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex gap-3">
+                                    {% if book.thumbnail %}
+                                    <img src="{{ book.thumbnail }}" class="img-thumbnail" 
+                                         alt="{{ book.title }}" style="width: 80px; height: auto;">
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                                               class="text-decoration-none">{{ book.title }}</a>
+                                        </h6>
+                                        <small class="text-muted d-block">{{ book.authors }}</small>
+                                        <div class="mt-2">
+                                            <form action="{{ url_for('update_status', book_id=book.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" name="status" value="read" 
+                                                        class="btn btn-sm btn-outline-success">
+                                                    Mark as Complete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No books currently being read</p>
+                        <a href="{{ url_for('shelf_view', shelf='to_read') }}" 
+                           class="btn btn-outline-primary">
+                            Start Reading Something
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Quick Actions -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Recently Added</h5>
+                        <a href="{{ url_for('shelf_view', shelf='to_read') }}" 
+                           class="btn btn-sm btn-outline-secondary">View All</a>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for book in to_read[:5] %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex gap-3">
+                                {% if book.thumbnail %}
+                                <img src="{{ book.thumbnail }}" class="img-thumbnail" 
+                                     alt="{{ book.title }}" style="width: 60px; height: auto;">
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                                           class="text-decoration-none">{{ book.title }}</a>
+                                    </h6>
+                                    <small class="text-muted">{{ book.authors }}</small>
+                                </div>
+                                <div>
+                                    <form action="{{ url_for('update_status', book_id=book.id) }}" 
+                                          method="POST">
+                                        <button type="submit" name="status" value="reading" 
+                                                class="btn btn-sm btn-outline-primary">
+                                            Start Reading
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('shelf_view', shelf='to_read') }}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-book"></i> Reading List
+                        </a>
+                        <a href="{{ url_for('shelf_view', shelf='read') }}" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-check-circle"></i> Completed Books
+                        </a>
+                        <a href="{{ url_for('stats') }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-graph-up"></i> View Statistics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

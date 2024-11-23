@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Reading Statistics</h2>
+    
+    <div class="row mb-4">
+        <!-- Overall Stats Card -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Overall Stats</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Total Books</span>
+                            <span class="badge bg-primary rounded-pill">{{ total_books|default(0) }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Books Read This Year</span>
+                            <span class="badge bg-success rounded-pill">{{ books_this_year|default(0) }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Total Pages Read</span>
+                            <span class="badge bg-secondary rounded-pill">{{ total_pages|default(0) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Card -->
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Top Categories</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if top_categories %}
+                            {% for category, count in top_categories %}
+                                {% if category %}
+                                    {% set size = ((count / (max_category_count|default(1))) * 5)|round|int %}
+                                    <a href="{{ url_for('category_view', category=category) }}" 
+                                       class="badge bg-secondary category-badge text-decoration-none" 
+                                       data-size="{{ size }}">
+                                        {{ category }} ({{ count }})
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No categories found.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Books by Year Read -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Books by Year Read</h5>
+                    {% if years %}
+                        <div class="list-group">
+                            {% for year, count in years %}
+                                {% if year %}
+                                    <a href="{{ url_for('stats', year=year) }}" 
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
+                                       {% if selected_year and year|string == selected_year|string %}active{% endif %}">
+                                        {{ year }}
+                                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No completed books found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Reading Activity -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Reading Activity</h5>
+                    <div class="list-group">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Most Read Publisher</span>
+                            <span class="badge bg-secondary">{{ most_read_publisher|default('None') }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Most Read Author</span>
+                            <span class="badge bg-secondary">{{ most_read_author|default('None') }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Average Pages per Book</span>
+                            <span class="badge bg-secondary">{{ avg_pages|default(0)|round|int }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_year %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Books from {{ selected_year }}</h5>
+            {% if books %}
+                <div class="row">
+                    {% for book in books %}
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex gap-3">
+                            {% if book.thumbnail %}
+                            <img src="{{ book.thumbnail }}" class="img-thumbnail" 
+                                 alt="{{ book.title|default('Unknown') }}" 
+                                 style="width: 60px; height: auto;">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ book.title|default('Unknown Title') }}</h6>
+                                <p class="mb-1 text-muted">{{ book.authors|default('Unknown Author') }}</p>
+                                <small class="text-muted">
+                                    {% if book.page_count %}{{ book.page_count }} pages{% endif %}
+                                    {% if book.publisher %}• {{ book.publisher }}{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No books found for {{ selected_year }}.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
