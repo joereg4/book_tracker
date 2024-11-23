@@ -321,24 +321,62 @@ def stats():
 
 @app.route('/book/<book_id>')
 def book_detail(book_id):
-    """Display details for a specific book"""
+    """Display details for a specific book from DB or Google Books"""
     db = SessionLocal()
     try:
+        # First check if it's in our database
         book = db.query(Book).filter_by(id=book_id).first()
+        
+        # If not in DB, check if it's a Google Books ID
         if not book:
-            flash('Book not found', 'error')
-            return redirect(url_for('index'))
+            try:
+                service = build('books', 'v1', developerKey=GOOGLE_BOOKS_API_KEY)
+                result = service.volumes().get(volumeId=book_id).execute()
+                
+                # Create a book-like object from Google Books data
+                volume_info = result.get('volumeInfo', {})
+                image_links = volume_info.get('imageLinks', {})
+                
+                book = {
+                    'id': result['id'],
+                    'title': volume_info.get('title', 'Unknown Title'),
+                    'authors': ', '.join(volume_info.get('authors', ['Unknown Author'])),
+                    'published_date': volume_info.get('publishedDate', ''),
+                    'description': strip_html_tags(volume_info.get('description', '')),
+                    'page_count': volume_info.get('pageCount'),
+                    'categories': ', '.join(volume_info.get('categories', [])),
+                    'language': volume_info.get('language'),
+                    'publisher': volume_info.get('publisher'),
+                    'thumbnail': image_links.get('thumbnail', ''),
+                    'small_thumbnail': image_links.get('smallThumbnail', ''),
+                    'isbn': next((i['identifier'] for i in volume_info.get('industryIdentifiers', []) 
+                                if i['type'] == 'ISBN_10'), ''),
+                    'isbn13': next((i['identifier'] for i in volume_info.get('industryIdentifiers', []) 
+                                  if i['type'] == 'ISBN_13'), ''),
+                    'preview_link': volume_info.get('previewLink', ''),
+                    'info_link': volume_info.get('infoLink', ''),
+                    'is_google_books': True  # Flag to indicate this is from Google Books
+                }
+                
+                return render_template('book.html', 
+                                    book=book,
+                                    is_google_books=True,
+                                    back_url=request.referrer or url_for('index'))
+                                    
+            except Exception as e:
+                flash('Book not found', 'error')
+                return redirect(url_for('index'))
         
         # Get the referrer but exclude the edit page
         referrer = request.referrer
         if referrer and '/edit' not in referrer:
             back_url = referrer
         else:
-            # Default to the appropriate shelf view
             back_url = url_for('shelf_view', shelf=book.status)
             
         return render_template('book.html', 
                              book=book,
+                             is_google_books=False,
                              current_shelf=book.status,
                              back_url=back_url)
     finally:
@@ -473,16 +511,28 @@ def edit_book(book_id):
     finally:
         db.close()
 
-@app.route('/category/<category>')
+@app.route('/category/<path:category>')
 def category_view(category):
+    """View books in a specific category. Using path:category to handle slashes"""
     db = SessionLocal()
     try:
+        # Normalize the category string for database search
+        search_category = category.replace(' / ', '/').strip()
+        
+        # Debug print to see what we're searching for
+        print(f"Searching for category: {search_category}")
+        
         # Get all books in this category, ordered by read date
         books = db.query(Book)\
-            .filter(Book.categories.ilike(f'%{category}%'))\
+            .filter(Book.categories.ilike(f'%{search_category}%'))\
             .filter(Book.status == 'read')\
             .order_by(Book.date_read.desc())\
             .all()
+            
+        # Debug print to see what's in the database
+        print(f"Found {len(books)} books")
+        for book in books:
+            print(f"Book categories: {book.categories}")
             
         return render_template('category.html',
                              category=category,

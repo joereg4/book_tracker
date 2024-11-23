@@ -108,15 +108,18 @@
                 <div class="mb-3">
                     <label for="thumbnail" class="form-label">Thumbnail URL</label>
                     <input type="url" class="form-control" id="thumbnail" name="thumbnail" 
-                           value="{{ book.thumbnail }}">
+                           value="{{ preview_data.thumbnail if preview_data else book.thumbnail }}">
+                    {% if preview_data and preview_data.thumbnail != book.thumbnail %}
+                        <small class="text-info">New value from Google Books</small>
+                    {% endif %}
                 </div>
 
-                {% if book.thumbnail %}
+                {% if (preview_data and preview_data.thumbnail) or book.thumbnail %}
                 <div class="mb-3">
                     <label class="form-label">Current Thumbnail Preview</label>
-                    <img src="{{ book.thumbnail|replace('http:', 'https:') }}" 
+                    <img src="{{ (preview_data.thumbnail if preview_data else book.thumbnail)|replace('http:', 'https:') }}" 
                          class="img-thumbnail" 
-                         alt="{{ book.title }}"
+                         alt="{{ preview_data.title if preview_data else book.title }}"
                          style="max-width: 150px;">
                 </div>
                 {% endif %}

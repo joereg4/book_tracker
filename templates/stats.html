@@ -38,7 +38,7 @@
                             {% for category, count in top_categories %}
                                 {% if category %}
                                     {% set size = ((count / (max_category_count|default(1))) * 5)|round|int %}
-                                    <a href="{{ url_for('category_view', category=category) }}" 
+                                    <a href="{{ url_for('category_view', category=category|replace('/', ' / ')) }}" 
                                        class="badge bg-secondary category-badge text-decoration-none" 
                                        data-size="{{ size }}">
                                         {{ category }} ({{ count }})
