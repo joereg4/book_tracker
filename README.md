@@ -54,18 +54,12 @@ FLASK_SECRET_KEY=your_secret_key_here
 GOOGLE_BOOKS_API_KEY=your_google_books_api_key_here
 ```
 
-5. Initialize the database:
-```bash
-python
->>> from app import db
->>> db.create_all()
->>> exit()
-```
-
-6. Run the application:
+5. Run the application:
 ```bash
 python app.py
 ```
+
+The application will automatically create the database on first run.
 
 The application will be available at `http://127.0.0.1:5000`
 
