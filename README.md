@@ -5,7 +5,6 @@ A Flask web application for tracking your reading history and discovering new bo
 ## Features
 - Track books you've read, are reading, or want to read
 - Search and discover new books via Google Books API
-- Import books from Goodreads
 - View reading statistics and trends
 - Categorize and organize your library
 - Edit book details and refresh metadata
@@ -30,8 +29,8 @@ A Flask web application for tracking your reading history and discovering new bo
 
 ## Installation
 
-1. Clone the repository: 
-bash
+1. Clone the repository:
+```bash
 git clone https://github.com/yourusername/book-tracker.git
 cd book-tracker
 
@@ -83,11 +82,7 @@ The application will be available at `http://127.0.0.1:5000`
    - Refresh book metadata from Google Books
    - Remove books from your library
 
-3. **Importing from Goodreads**
-   - Export your Goodreads library as CSV
-   - Use the Import feature to bulk import books
-
-4. **Viewing Statistics**
+3. **Viewing Statistics**
    - See reading trends and patterns
    - Track categories and authors
    - Monitor reading progress
