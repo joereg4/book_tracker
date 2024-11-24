@@ -33,11 +33,32 @@ load_dotenv()
 GOOGLE_BOOKS_API_KEY = os.getenv('GOOGLE_BOOKS_API_KEY')
 
 def strip_html_tags(text):
-    """Remove HTML tags from a string"""
+    """Remove HTML tags and decode HTML entities from a string"""
     if not text:
         return ''
+    
+    # First pass: remove bold tags specifically (replace with their content)
+    text = re.sub(r'<b>(.*?)</b>', r'\1', text)
+    text = re.sub(r'<strong>(.*?)</strong>', r'\1', text)
+    
+    # Second pass: remove remaining HTML tags
     clean = re.compile('<.*?>')
-    return re.sub(clean, '\n', text).replace('\n\n', '\n').strip()
+    text = re.sub(clean, ' ', text)
+    
+    # Replace common HTML entities
+    text = text.replace('&nbsp;', ' ')\
+               .replace('&amp;', '&')\
+               .replace('&lt;', '<')\
+               .replace('&gt;', '>')\
+               .replace('&quot;', '"')\
+               .replace('&#39;', "'")\
+               .replace('&ndash;', '–')\
+               .replace('&mdash;', '—')
+    
+    # Clean up extra whitespace
+    text = ' '.join(text.split())
+    
+    return text.strip()
 
 @app.route('/')
 def index():
@@ -214,16 +235,31 @@ def shelf_view(shelf):
     
     db = SessionLocal()
     try:
-        # Different ordering based on shelf
+        # Get search query
+        search_query = request.args.get('search', '').strip()
+        
+        # Base query
+        query = db.query(Book).filter_by(status=shelf)
+        
+        # Apply search if provided
+        if search_query:
+            search_filter = (
+                (Book.title.ilike(f'%{search_query}%')) |
+                (Book.authors.ilike(f'%{search_query}%')) |
+                (Book.description.ilike(f'%{search_query}%')) |
+                (Book.publisher.ilike(f'%{search_query}%')) |
+                (Book.categories.ilike(f'%{search_query}%'))
+            )
+            query = query.filter(search_filter)
+        
+        # Apply ordering
         if shelf == 'read':
-            # Order read books by date_read (newest first), then created_at for books without date_read
-            books = db.query(Book).filter_by(status=shelf)\
-                     .order_by(Book.date_read.desc().nulls_last(),
-                              Book.created_at.desc()).all()
+            query = query.order_by(Book.date_read.desc().nulls_last(),
+                                 Book.created_at.desc())
         else:
-            # Other shelves ordered by created date
-            books = db.query(Book).filter_by(status=shelf)\
-                     .order_by(Book.created_at.desc()).all()
+            query = query.order_by(Book.created_at.desc())
+            
+        books = query.all()
             
         return render_template('shelf.html',
                              books=books,

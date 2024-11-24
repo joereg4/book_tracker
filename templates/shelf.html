@@ -21,6 +21,29 @@
         </div>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="GET" class="d-flex gap-2">
+                <input type="text" 
+                       name="search" 
+                       class="form-control" 
+                       placeholder="Search this shelf..." 
+                       value="{{ request.args.get('search', '') }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+                {% if request.args.get('search') %}
+                    <a href="{{ url_for('shelf_view', shelf=current_shelf) }}" 
+                       class="btn btn-outline-secondary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    {% if request.args.get('search') %}
+        <p class="text-muted mb-4">
+            Found {{ books|length }} book{{ 's' if books|length != 1 }} matching "{{ request.args.get('search') }}"
+        </p>
+    {% endif %}
+
     <div class="list-group">
         {% for book in books %}
         <div class="list-group-item mb-3">
@@ -54,7 +77,7 @@
                     </div>
                     
                     {% if book.description %}
-                    <p class="mt-3">{{ book.description[:500] }}...</p>
+                    <p class="mt-3">{{ book.description[:500]|safe }}{% if book.description|length > 500 %}...{% endif %}</p>
                     {% endif %}
                     
                     <div class="mt-3">
