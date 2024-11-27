@@ -8,6 +8,11 @@ A Flask web application for tracking your reading history and discovering new bo
 - View reading statistics and trends
 - Categorize and organize your library
 - Edit book details and refresh metadata
+- Search within your library shelves
+- View book thumbnails and descriptions
+- Track reading dates for completed books
+- Support for ISBN-10 and ISBN-13
+- Automatic HTTPS conversion for book thumbnails
 
 ## Prerequisites
 - Python 3.8+
@@ -66,17 +71,30 @@ The application will be available at `http://127.0.0.1:5000`
 ## Usage
 
 1. **Adding Books**
-   - Click "Add New Book" on the dashboard
    - Search for books using the Google Books API
    - Select a shelf (To Read, Currently Reading, or Read)
+   - Books are automatically populated with metadata from Google Books
 
 2. **Managing Books**
-   - Move books between shelves
-   - Edit book details
-   - Refresh book metadata from Google Books
+   - Move books between shelves using the dropdown menu
+   - Edit book details with option to refresh from Google Books
+   - Track reading dates for completed books
    - Remove books from your library
+   - Search within your library shelves
 
-3. **Viewing Statistics**
+3. **Book Details**
+   - View comprehensive book information including:
+     - Title and authors
+     - Publication date and publisher
+     - Page count
+     - Description (HTML-free)
+     - Categories
+     - ISBN numbers
+     - Language and maturity rating
+     - Preview and info links
+     - Book thumbnails
+
+4. **Viewing Statistics**
    - See reading trends and patterns
    - Track categories and authors
    - Monitor reading progress
