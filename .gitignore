@@ -41,6 +41,10 @@ MANIFEST
 *.db
 *.sqlite3
 test.db
+*.db-journal  # SQLite journal files
+*.db.backup   # Database backups
+*.bak         # Generic backup files
+*.backup      # Another common backup extension
 
 # Installer logs
 pip-log.txt
