@@ -45,6 +45,7 @@ test.db
 *.db.backup   # Database backups
 *.bak         # Generic backup files
 *.backup      # Another common backup extension
+backups/
 
 # Installer logs
 pip-log.txt
