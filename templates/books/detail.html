@@ -34,7 +34,7 @@
                                 </div>
                             {% else %}
                                 <!-- Show add to library button for Google Books results -->
-                                <form action="{{ url_for('add_book') }}" method="POST" class="mb-3">
+                                <form action="{{ url_for('books.add') }}" method="POST" class="mb-3">
                                     <!-- Add all the hidden fields needed for book creation -->
                                     <input type="hidden" name="id" value="{{ book.id }}">
                                     <!-- ... other fields ... -->

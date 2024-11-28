@@ -64,7 +64,7 @@
                         <div class="list-group">
                             {% for year, count in years %}
                                 {% if year %}
-                                    <a href="{{ url_for('stats', year=year) }}" 
+                                    <a href="{{ url_for('stats.dashboard', year=year) }}" 
                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
                                        {% if selected_year and year|string == selected_year|string %}active{% endif %}">
                                         {{ year }}

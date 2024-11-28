@@ -10,11 +10,18 @@ from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from datetime import datetime
 import re
-from collections import Counter
+#from routes.main import bp as main_bp
+from routes.books import bp as books_bp
+from routes.stats import bp as stats_bp
 
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
+
+# Register blueprints
+#app.register_blueprint(main_bp)
+app.register_blueprint(books_bp)
+app.register_blueprint(stats_bp)
 
 # Add max and min functions to Jinja environment
 app.jinja_env.globals.update(max=max, min=min)
@@ -24,9 +31,6 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///books.db')
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
 SessionLocal = sessionmaker(bind=engine)
-
-# Initialize OpenLibrary client
-ol = OpenLibrary()
 
 # Load environment variables
 load_dotenv()
@@ -72,7 +76,7 @@ def index():
         read = db.query(Book).filter_by(status='read')\
                 .order_by(Book.date_read.desc().nulls_last()).all()
         
-        return render_template('index.html', 
+        return render_template('home.html', 
                              to_read=to_read,
                              reading=reading,
                              read=read)
@@ -164,7 +168,7 @@ def search():
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         flash(f'Error searching books: {str(e)}', 'error')
-        return render_template('search.html', results_per_page=results_per_page)
+        return render_template('books.search.html', results_per_page=results_per_page)
     finally:
         if 'db' in locals():
             db.close()
@@ -261,97 +265,10 @@ def shelf_view(shelf):
             
         books = query.all()
             
-        return render_template('shelf.html',
+        return render_template('view.html',
                              books=books,
                              title=titles.get(shelf, 'Books'),
                              current_shelf=shelf)
-    finally:
-        db.close()
-
-@app.route('/stats')
-def stats():
-    db = SessionLocal()
-    try:
-        # Get selected year from query params
-        selected_year = request.args.get('year', type=int)
-        
-        # Calculate overall stats
-        total_books = db.query(Book).count()
-        current_year = datetime.now().year
-        books_this_year = db.query(Book)\
-            .filter(Book.date_read.isnot(None))\
-            .filter(extract('year', Book.date_read) == current_year)\
-            .count()
-        
-        # Calculate total pages
-        total_pages = db.query(func.sum(Book.page_count))\
-            .filter(Book.status == 'read')\
-            .scalar() or 0
-            
-        # Get books by year read (instead of publication year)
-        years = db.query(
-            extract('year', Book.date_read).label('year'),
-            func.count().label('count')
-        ).filter(Book.status == 'read')\
-         .filter(Book.date_read.isnot(None))\
-         .group_by('year')\
-         .order_by(desc('year'))\
-         .all()
-        
-        # Get books for selected year
-        books = None
-        if selected_year:
-            books = db.query(Book)\
-                .filter(Book.status == 'read')\
-                .filter(extract('year', Book.date_read) == selected_year)\
-                .order_by(Book.date_read.desc())\
-                .all()
-
-        # Get categories and their counts
-        categories = []
-        for book in db.query(Book).all():
-            if book.categories:
-                cats = [c.strip() for c in book.categories.split(',')]
-                categories.extend(cats)
-        
-        category_counts = Counter(categories)
-        top_categories = category_counts.most_common(15)  # Get top 15 categories
-        max_category_count = max(count for _, count in top_categories) if top_categories else 1
-        
-        # Get most read publisher
-        most_read_publisher = db.query(
-            Book.publisher,
-            func.count().label('count')
-        ).filter(Book.publisher.isnot(None))\
-         .group_by(Book.publisher)\
-         .order_by(desc('count'))\
-         .first()
-        
-        # Get most read author
-        most_read_author = db.query(
-            Book.authors,
-            func.count().label('count')
-        ).group_by(Book.authors)\
-         .order_by(desc('count'))\
-         .first()
-        
-        # Calculate average pages per book
-        avg_pages = db.query(func.avg(Book.page_count))\
-            .filter(Book.page_count.isnot(None))\
-            .scalar() or 0
-        
-        return render_template('stats.html',
-                             total_books=total_books,
-                             books_this_year=books_this_year,
-                             total_pages=total_pages,
-                             years=years,
-                             selected_year=selected_year,
-                             books=books,
-                             top_categories=top_categories,
-                             max_category_count=max_category_count,
-                             most_read_publisher=most_read_publisher[0] if most_read_publisher else "None",
-                             most_read_author=most_read_author[0] if most_read_author else "None",
-                             avg_pages=avg_pages)
     finally:
         db.close()
 
@@ -394,7 +311,7 @@ def book_detail(book_id):
                     'is_google_books': True  # Flag to indicate this is from Google Books
                 }
                 
-                return render_template('book.html', 
+                return render_template('books/detail.html', 
                                     book=book,
                                     is_google_books=True,
                                     back_url=request.referrer or url_for('index'))
@@ -410,7 +327,7 @@ def book_detail(book_id):
         else:
             back_url = url_for('shelf_view', shelf=book.status)
             
-        return render_template('book.html', 
+        return render_template('books/detail.html', 
                              book=book,
                              is_google_books=False,
                              current_shelf=book.status,
@@ -508,7 +425,7 @@ def edit_book(book_id):
                     print("Preview Data:", json.dumps(preview_data, indent=2))
                     
                     # Return the edit template with both current and preview data
-                    return render_template('edit_book.html', book=book, preview_data=preview_data)
+                    return render_template('books/edit.html', book=book, preview_data=preview_data)
                     
                 except Exception as e:
                     flash(f'Error refreshing book data: {str(e)}', 'error')
@@ -541,9 +458,9 @@ def edit_book(book_id):
 
             db.commit()
             flash('Book updated successfully!', 'success')
-            return redirect(url_for('book_detail', book_id=book_id))
+            return redirect(url_for('books.detail', book_id=book_id))
 
-        return render_template('edit_book.html', book=book)
+        return render_template('books/edit.html', book=book)
     finally:
         db.close()
 
