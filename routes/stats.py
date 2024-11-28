@@ -1,9 +1,23 @@
 from flask import Blueprint, render_template, request
-from sqlalchemy import func, desc, extract
+from sqlalchemy import func, extract
+from sqlalchemy.sql import desc
 from datetime import datetime
 from collections import Counter
 from models import Book
 from helper import create_session
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import nltk
+import re
+
+# Add this at the top of the file, after imports
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('punkt_tab')
 
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 
@@ -29,13 +43,14 @@ def dashboard():
             .scalar() or 0
             
         # Get books by year read (instead of publication year)
+        year_column = extract('year', Book.date_read).label('year')
         years = db.query(
-            extract('year', Book.date_read).label('year'),
+            year_column,
             func.count().label('count')
         ).filter(Book.status == 'read')\
          .filter(Book.date_read.isnot(None))\
          .group_by('year')\
-         .order_by(desc('year'))\
+         .order_by(year_column.desc())\
          .all()
         
         # Get most read author with count
@@ -44,7 +59,7 @@ def dashboard():
             func.count().label('count')
         ).filter(Book.authors.isnot(None))\
          .group_by(Book.authors)\
-         .order_by(desc('count'))\
+         .order_by(-func.count())\
          .first()
         
         # Get books for selected year or author
@@ -78,7 +93,7 @@ def dashboard():
             func.count().label('count')
         ).filter(Book.publisher.isnot(None))\
          .group_by(Book.publisher)\
-         .order_by(desc('count'))\
+         .order_by(-func.count())\
          .first()
         
         # Calculate average pages per book
@@ -116,6 +131,6 @@ def dashboard():
                             most_read_author_count=most_read_author[1] if most_read_author else 0,
                             avg_pages=avg_pages,
                             longest_book=longest_book,
-                            shortest_book=shortest_book)
+                            shortest_book=shortest_book,)
     finally:
         db.close() 
