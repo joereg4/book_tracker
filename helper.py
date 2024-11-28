@@ -2,22 +2,24 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from models import Book, Base
 import re
+import os
 
-# Configure your database URL
-DATABASE_URL = 'sqlite:///books.db'  # Example using SQLite
+def get_database_url():
+    """Get database URL based on environment"""
+    if os.getenv('TESTING') == 'True':
+        return os.getenv('TEST_DATABASE_URL')
+    return os.getenv('DATABASE_URL', 'sqlite:///books.db')
 
-# Create a new database session
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
+# Create engine and session factory based on environment
+def create_session():
+    engine = create_engine(get_database_url())
+    return sessionmaker(bind=engine)()
 
-def get_book_status(open_library_id):
-    """Check if a book exists in the database and return its status."""
-    db = SessionLocal()
+def get_db():
+    """Database dependency"""
+    db = create_session()
     try:
-        book = db.query(Book).filter_by(open_library_id=open_library_id).first()
-        if book:
-            return book.status
-        return None
+        yield db
     finally:
         db.close()
 

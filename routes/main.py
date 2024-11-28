@@ -1,13 +1,13 @@
 from flask import Blueprint, render_template
 from models import Book
-from helper import SessionLocal
+from helper import create_session
 
 bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
     """Show dashboard view"""
-    db = SessionLocal()
+    db = create_session()
     try:
         to_read = db.query(Book).filter_by(status='to_read')\
                    .order_by(Book.created_at.desc()).all()

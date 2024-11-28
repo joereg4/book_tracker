@@ -2,14 +2,14 @@ from flask import Blueprint, render_template, request
 from sqlalchemy import func, desc, extract
 from datetime import datetime
 from collections import Counter
-from models import Book  # Remove SessionLocal from here
-from helper import SessionLocal  # Add this import instead
+from models import Book
+from helper import create_session
 
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 
 @bp.route('/')
 def dashboard():
-    db = SessionLocal()
+    db = create_session()
     try:
         # Get selected year from query params
         selected_year = request.args.get('year', type=int)

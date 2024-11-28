@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request
 from models import Book
-from helper import SessionLocal
+from helper import create_session
 
 bp = Blueprint('shelf', __name__)
 
@@ -13,7 +13,7 @@ def view(shelf):
         'read': 'Read'
     }
     
-    db = SessionLocal()
+    db = create_session()
     try:
         # Get search query
         search_query = request.args.get('search', '').strip()

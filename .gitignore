@@ -40,6 +40,7 @@ MANIFEST
 # Database
 *.db
 *.sqlite3
+test.db
 
 # Installer logs
 pip-log.txt

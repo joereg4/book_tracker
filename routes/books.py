@@ -4,7 +4,7 @@ from datetime import datetime
 import re
 from googleapiclient.discovery import build
 import os
-from helper import SessionLocal
+from helper import create_session
 from models import Book
 
 # Initialize blueprint
@@ -57,7 +57,7 @@ def search():
             return render_template('books/search.html', results_per_page=results_per_page)
         
         # Get existing books from database for comparison
-        db = SessionLocal()
+        db = create_session()
         existing_books = {book.google_books_id: book.status 
                          for book in db.query(Book).all()}
         
@@ -126,7 +126,7 @@ def search():
 
 @bp.route('/add', methods=['POST'])
 def add():
-    db = SessionLocal()
+    db = create_session()
     try:
         # Check if book already exists
         google_books_id = request.form.get('id')
@@ -134,7 +134,7 @@ def add():
         
         if existing_book:
             flash('Book already exists in your library', 'warning')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         # Create new book with all fields from the form
         new_book = Book(
@@ -176,12 +176,12 @@ def add():
     finally:
         db.close()
     
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
 
 @bp.route('/book/<book_id>')
 def detail(book_id):  # renamed from book_detail for blueprint consistency
     """Display details for a specific book from DB or Google Books"""
-    db = SessionLocal()
+    db = create_session()
     try:
         # First check if it's in our database
         book = db.query(Book).filter_by(id=book_id).first()
@@ -220,11 +220,11 @@ def detail(book_id):  # renamed from book_detail for blueprint consistency
                 return render_template('books/detail.html', 
                                     book=book,
                                     is_google_books=True,
-                                    back_url=request.referrer or url_for('index'))
+                                    back_url=request.referrer or url_for('main.index'))
                                     
             except Exception as e:
                 flash('Book not found', 'error')
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
         
         # Get the referrer but exclude the edit page
         referrer = request.referrer
@@ -245,38 +245,40 @@ def detail(book_id):  # renamed from book_detail for blueprint consistency
 def update_status(book_id):
     """Update a book's status"""
     new_status = request.form.get('status')
-    db = SessionLocal()
+    db = create_session()
     try:
         book = db.query(Book).filter_by(id=book_id).first()
         if not book:
             flash('Book not found', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
             
         if new_status == 'remove':
             db.delete(book)
             flash('Book removed from your library', 'success')
         else:
+            # Explicitly set the status and commit before checking for read status
             book.status = new_status
             if new_status == 'read':
                 book.date_read = datetime.now()
             flash(f'Book moved to "{new_status}" shelf', 'success')
             
         db.commit()
+        return redirect(request.referrer or url_for('main.index'))
     except Exception as e:
         db.rollback()
         flash(f'Error updating book status: {str(e)}', 'error')
     finally:
         db.close()
-    return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('main.index'))
 
 @bp.route('/edit/<book_id>', methods=['GET', 'POST'])
 def edit(book_id):  # renamed from edit_book for blueprint consistency
-    db = SessionLocal()
+    db = create_session()
     try:
         book = db.query(Book).filter_by(id=book_id).first()
         if not book:
             flash('Book not found', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
 
         if request.method == 'POST':
             if 'cancel' in request.form:
@@ -361,7 +363,7 @@ def edit(book_id):  # renamed from edit_book for blueprint consistency
 @bp.route('/category/<path:category>')
 def category(category):  # renamed from category_view for blueprint consistency
     """View books in a specific category. Using path:category to handle slashes"""
-    db = SessionLocal()
+    db = create_session()
     try:
         # Normalize the category string for database search
         search_category = category.replace(' / ', '/').strip()
