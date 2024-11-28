@@ -58,6 +58,10 @@ def db_session(database):
     session = next(get_db())
     try:
         yield session
+        # Clear all tables after each test
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
+        session.commit()
     finally:
         session.rollback()
         session.close() 
