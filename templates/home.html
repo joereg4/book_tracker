@@ -55,12 +55,12 @@
                                     {% endif %}
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1">
-                                            <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                                            <a href="{{ url_for('books.detail', book_id=book.id) }}" 
                                                class="text-decoration-none">{{ book.title }}</a>
                                         </h6>
                                         <small class="text-muted d-block">{{ book.authors }}</small>
                                         <div class="mt-2">
-                                            <form action="{{ url_for('update_status', book_id=book.id) }}" 
+                                            <form action="{{ url_for('books.update_status', book_id=book.id) }}" 
                                                   method="POST" class="d-inline">
                                                 <button type="submit" name="status" value="read" 
                                                         class="btn btn-sm btn-outline-success">
@@ -105,13 +105,13 @@
                                 {% endif %}
                                 <div class="flex-grow-1">
                                     <h6 class="mb-1">
-                                        <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                                        <a href="{{ url_for('books.detail', book_id=book.id) }}" 
                                            class="text-decoration-none">{{ book.title }}</a>
                                     </h6>
                                     <small class="text-muted">{{ book.authors }}</small>
                                 </div>
                                 <div>
-                                    <form action="{{ url_for('update_status', book_id=book.id) }}" 
+                                    <form action="{{ url_for('books.update_status', book_id=book.id) }}" 
                                           method="POST">
                                         <button type="submit" name="status" value="reading" 
                                                 class="btn btn-sm btn-outline-primary">
