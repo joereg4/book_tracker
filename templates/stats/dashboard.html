@@ -105,34 +105,39 @@
     </div>
 
     {% if selected_year %}
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Books from {{ selected_year }}</h5>
-            {% if books %}
-                <div class="row">
-                    {% for book in books %}
-                    <div class="col-md-6 mb-3">
-                        <div class="d-flex gap-3">
-                            {% if book.thumbnail %}
-                            <img src="{{ book.thumbnail }}" class="img-thumbnail" 
-                                 alt="{{ book.title|default('Unknown') }}" 
-                                 style="width: 60px; height: auto;">
-                            {% endif %}
-                            <div>
-                                <h6 class="mb-1">{{ book.title|default('Unknown Title') }}</h6>
-                                <p class="mb-1 text-muted">{{ book.authors|default('Unknown Author') }}</p>
-                                <small class="text-muted">
-                                    {% if book.page_count %}{{ book.page_count }} pages{% endif %}
-                                    {% if book.publisher %}• {{ book.publisher }}{% endif %}
-                                </small>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Books Read in {{ selected_year }}</h5>
+                    {% if books %}
+                        <div class="list-group">
+                            {% for book in books %}
+                            <div class="list-group-item">
+                                <div class="d-flex gap-3">
+                                    {% if book.thumbnail %}
+                                    <img src="{{ book.thumbnail }}" 
+                                         class="img-thumbnail" 
+                                         alt="{{ book.title }}" 
+                                         style="width: 80px; height: auto;">
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-1">{{ book.title }}</h6>
+                                        <p class="mb-1 text-muted">{{ book.authors }}</p>
+                                        <small class="text-muted">
+                                            Read on: {{ book.date_read.strftime('%B %d, %Y') }}
+                                            {% if book.page_count %} • {{ book.page_count }} pages{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
+                            {% endfor %}
                         </div>
-                    </div>
-                    {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No books found for {{ selected_year }}</p>
+                    {% endif %}
                 </div>
-            {% else %}
-                <p class="text-muted">No books found for {{ selected_year }}.</p>
-            {% endif %}
+            </div>
         </div>
     </div>
     {% endif %}
