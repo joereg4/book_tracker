@@ -13,6 +13,7 @@ def dashboard():
     try:
         # Get selected year from query params
         selected_year = request.args.get('year', type=int)
+        selected_author = request.args.get('author')
         
         # Calculate overall stats
         total_books = db.query(Book).count()
@@ -37,12 +38,26 @@ def dashboard():
          .order_by(desc('year'))\
          .all()
         
-        # Get books for selected year
+        # Get most read author with count
+        most_read_author = db.query(
+            Book.authors,
+            func.count().label('count')
+        ).filter(Book.authors.isnot(None))\
+         .group_by(Book.authors)\
+         .order_by(desc('count'))\
+         .first()
+        
+        # Get books for selected year or author
         books = None
         if selected_year:
             books = db.query(Book)\
                 .filter(Book.status == 'read')\
                 .filter(extract('year', Book.date_read) == selected_year)\
+                .order_by(Book.date_read.desc())\
+                .all()
+        elif selected_author:
+            books = db.query(Book)\
+                .filter(Book.authors == selected_author)\
                 .order_by(Book.date_read.desc())\
                 .all()
 
@@ -66,20 +81,28 @@ def dashboard():
          .order_by(desc('count'))\
          .first()
         
-        # Get most read author
-        most_read_author = db.query(
-            Book.authors,
-            func.count().label('count')
-        ).group_by(Book.authors)\
-         .order_by(desc('count'))\
-         .first()
-        
         # Calculate average pages per book
         avg_pages = db.query(func.avg(Book.page_count))\
             .filter(Book.page_count.isnot(None))\
             .scalar() or 0
 
+        # Get longest and shortest books (only considering books with valid page counts)
+        longest_book = db.query(Book)\
+            .filter(Book.page_count.isnot(None))\
+            .filter(Book.page_count > 0)\
+            .filter(Book.status == 'read')\
+            .order_by(Book.page_count.desc())\
+            .first()
+            
+        shortest_book = db.query(Book)\
+            .filter(Book.page_count.isnot(None))\
+            .filter(Book.page_count > 0)\
+            .filter(Book.status == 'read')\
+            .order_by(Book.page_count.asc())\
+            .first()
+
         return render_template('stats/dashboard.html',
+                            selected_author=selected_author,
                             total_books=total_books,
                             books_this_year=books_this_year,
                             total_pages=total_pages,
@@ -90,6 +113,9 @@ def dashboard():
                             max_category_count=max_category_count,
                             most_read_publisher=most_read_publisher[0] if most_read_publisher else "None",
                             most_read_author=most_read_author[0] if most_read_author else "None",
-                            avg_pages=avg_pages)
+                            most_read_author_count=most_read_author[1] if most_read_author else 0,
+                            avg_pages=avg_pages,
+                            longest_book=longest_book,
+                            shortest_book=shortest_book)
     finally:
         db.close() 

@@ -90,14 +90,27 @@
                             <span>Most Read Publisher</span>
                             <span class="badge bg-secondary">{{ most_read_publisher|default('None') }}</span>
                         </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('stats.dashboard', author=most_read_author) }}" 
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             <span>Most Read Author</span>
                             <span class="badge bg-secondary">{{ most_read_author|default('None') }}</span>
-                        </div>
+                        </a>
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Average Pages per Book</span>
                             <span class="badge bg-secondary">{{ "{:,}".format(avg_pages|default(0)|round|int) }}</span>
                         </div>
+                        {% if longest_book %}
+                        <a href="{{ url_for('books.detail', book_id=longest_book.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>Longest Book</span>
+                            <span class="badge bg-secondary">{{ longest_book.title }} ({{ "{:,}".format(longest_book.page_count) }} pages)</span>
+                        </a>
+                        {% endif %}
+                        {% if shortest_book %}
+                        <a href="{{ url_for('books.detail', book_id=shortest_book.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>Shortest Book</span>
+                            <span class="badge bg-secondary">{{ shortest_book.title }} ({{ "{:,}".format(shortest_book.page_count) }} pages)</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -135,6 +148,44 @@
                         </div>
                     {% else %}
                         <p class="text-muted">No books found for {{ selected_year }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Add this new section for author books #}
+    {% if selected_author %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Books by {{ selected_author }}</h5>
+                    {% if books %}
+                        <div class="list-group">
+                            {% for book in books %}
+                            <div class="list-group-item">
+                                <div class="d-flex gap-3">
+                                    {% if book.thumbnail %}
+                                    <img src="{{ book.thumbnail }}" 
+                                         class="img-thumbnail" 
+                                         alt="{{ book.title }}" 
+                                         style="width: 80px; height: auto;">
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-1">{{ book.title }}</h6>
+                                        <small class="text-muted">
+                                            {% if book.date_read %}Read on: {{ book.date_read.strftime('%B %d, %Y') }}{% endif %}
+                                            {% if book.page_count %} • {{ book.page_count }} pages{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No books found for {{ selected_author }}</p>
                     {% endif %}
                 </div>
             </div>
