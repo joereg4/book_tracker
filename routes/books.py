@@ -49,12 +49,12 @@ def search():
     results_per_page = 40
     
     if not query:
-        return render_template('search.html', results_per_page=results_per_page)
+        return render_template('books/search.html', results_per_page=results_per_page)
     
     try:
         if not GOOGLE_BOOKS_API_KEY:
             flash('API key not found', 'error')
-            return render_template('search.html', results_per_page=results_per_page)
+            return render_template('books/search.html', results_per_page=results_per_page)
         
         # Get existing books from database for comparison
         db = SessionLocal()
@@ -112,7 +112,7 @@ def search():
                 }
                 books.append(book)
         
-        return render_template('search.html', 
+        return render_template('books/search.html', 
                              results=books, 
                              query=query,
                              page=page,
@@ -122,4 +122,58 @@ def search():
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         flash(f'Error searching books: {str(e)}')
-        return render_template('search.html', results_per_page=results_per_page)
+        return render_template('books/search.html', results_per_page=results_per_page)
+
+@bp.route('/add', methods=['POST'])
+def add():
+    db = SessionLocal()
+    try:
+        # Check if book already exists
+        google_books_id = request.form.get('id')
+        existing_book = db.query(Book).filter_by(google_books_id=google_books_id).first()
+        
+        if existing_book:
+            flash('Book already exists in your library', 'warning')
+            return redirect(url_for('index'))
+        
+        # Create new book with all fields from the form
+        new_book = Book(
+            google_books_id=google_books_id,
+            title=request.form.get('title'),
+            authors=request.form.get('authors'),
+            status=request.form.get('status', 'to_read'),
+            published_date=request.form.get('published_date'),
+            description=request.form.get('description'),
+            page_count=request.form.get('page_count'),
+            categories=request.form.get('categories'),
+            language=request.form.get('language'),
+            publisher=request.form.get('publisher'),
+            isbn=request.form.get('isbn'),
+            isbn13=request.form.get('isbn13'),
+            thumbnail=request.form.get('thumbnail'),
+            small_thumbnail=request.form.get('small_thumbnail'),
+            etag=request.form.get('etag'),
+            self_link=request.form.get('self_link'),
+            print_type=request.form.get('print_type'),
+            maturity_rating=request.form.get('maturity_rating'),
+            preview_link=request.form.get('preview_link'),
+            info_link=request.form.get('info_link'),
+            canonical_volume_link=request.form.get('canonical_volume_link'),
+            content_version=request.form.get('content_version'),
+            is_ebook=request.form.get('is_ebook') == 'true'
+        )
+        
+        if new_book.status == 'read':
+            new_book.date_read = datetime.now()
+            
+        db.add(new_book)
+        db.commit()
+        flash('Book added successfully!', 'success')
+        
+    except Exception as e:
+        db.rollback()
+        flash(f'Error adding book: {str(e)}', 'error')
+    finally:
+        db.close()
+    
+    return redirect(url_for('index'))
