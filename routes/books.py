@@ -231,7 +231,7 @@ def detail(book_id):  # renamed from book_detail for blueprint consistency
         if referrer and '/edit' not in referrer:
             back_url = referrer
         else:
-            back_url = url_for('shelf_view', shelf=book.status)
+            back_url = url_for('shelf.view', shelf=book.status)
             
         return render_template('books/detail.html', 
                              book=book,

@@ -6,15 +6,15 @@
         <h2>{{ title }}</h2>
         <div class="btn-group">
             <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">All Books</a>
-            <a href="{{ url_for('shelf_view', shelf='to_read') }}" 
+            <a href="{{ url_for('shelf.view', shelf='to_read') }}" 
                class="btn {% if current_shelf == 'to_read' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                To Read
             </a>
-            <a href="{{ url_for('shelf_view', shelf='reading') }}" 
+            <a href="{{ url_for('shelf.view', shelf='reading') }}" 
                class="btn {% if current_shelf == 'reading' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                Currently Reading
             </a>
-            <a href="{{ url_for('shelf_view', shelf='read') }}" 
+            <a href="{{ url_for('shelf.view', shelf='read') }}" 
                class="btn {% if current_shelf == 'read' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                Read
             </a>
@@ -31,7 +31,7 @@
                        value="{{ request.args.get('search', '') }}">
                 <button type="submit" class="btn btn-primary">Search</button>
                 {% if request.args.get('search') %}
-                    <a href="{{ url_for('shelf_view', shelf=current_shelf) }}" 
+                    <a href="{{ url_for('shelf.view', shelf=current_shelf) }}" 
                        class="btn btn-outline-secondary">Clear</a>
                 {% endif %}
             </form>

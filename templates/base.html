@@ -16,13 +16,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('shelf_view', shelf='to_read') }}">To Read</a>
+                        <a class="nav-link" href="{{ url_for('shelf.view', shelf='to_read') }}">To Read</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('shelf_view', shelf='reading') }}">Reading</a>
+                        <a class="nav-link" href="{{ url_for('shelf.view', shelf='reading') }}">Reading</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('shelf_view', shelf='read') }}">Read</a>
+                        <a class="nav-link" href="{{ url_for('shelf.view', shelf='read') }}">Read</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('books.search') }}">Search</a>
