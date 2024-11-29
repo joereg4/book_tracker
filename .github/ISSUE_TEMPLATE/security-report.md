@@ -1,6 +1,6 @@
 ---
 name: Security report
-about: Submit a vulnerability
+about: Submit a non-critical security concern
 title: "[SECURITY]"
 labels: security
 assignees: ''
@@ -8,7 +8,12 @@ assignees: ''
 ---
 
 **⚠️ PLEASE READ FIRST ⚠️**
-If this vulnerability is particularly sensitive, please consider using GitHub's private security reporting feature instead.
+For critical or sensitive security vulnerabilities, please use GitHub's private security reporting feature instead:
+1. Go to the "Security" tab
+2. Click "Report a vulnerability"
+3. Fill out the private report form
+
+For non-critical security concerns, you may continue with this template:
 
 ## Vulnerability Description
 <!-- Provide a clear and detailed description of the security vulnerability -->
