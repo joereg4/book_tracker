@@ -61,7 +61,7 @@ representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported through the following channels:
 
-1. **Private Issue Report**: Use our [Code of Conduct violation report form](https://github.com/book-tracker/book-tracker/issues/new?template=code_of_conduct_violation.yml) which will only be visible to project maintainers.
+1. **Private Issue Report**: Use our [Code of Conduct violation report form](https://github.com/joereg4/book_tracker/issues/new?template=code_of_conduct_violation.yml) which will only be visible to project maintainers.
 
 2. **Email**: For sensitive matters, you can email the project maintainers directly at joereg4@gmail.com.
 
