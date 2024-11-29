@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/joereg4/book_tracker/security/advisories/new
+    about: Please report security vulnerabilities here for private disclosure
+  - name: Discussions
+    url: https://github.com/joereg4/book_tracker/discussions
+    about: Please ask and answer questions here
+  - name: Code of Conduct Concerns
+    url: https://github.com/joereg4/book_tracker/issues/new?template=code_of_conduct_violation.yml
+    about: Report Code of Conduct violations privately to project maintainers 
