@@ -36,7 +36,7 @@ A Flask web application for tracking your reading history and discovering new bo
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/book-tracker.git
+git clone https://github.com/joereg4/book_tracker.git
 cd book-tracker
 
 2. Check Python version:
