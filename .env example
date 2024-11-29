@@ -1,4 +1,4 @@
-FLASK_SECRET_KEY=
-APP_URL=
-FLASK_ENV=
-GOOGLE_BOOKS_API_KEY=
+FLASK_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(16))')
+APP_URL=http://localhost:5000
+FLASK_ENV=development
+GOOGLE_BOOKS_API_KEY=your_google_books_api_key_here

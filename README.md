@@ -39,27 +39,40 @@ A Flask web application for tracking your reading history and discovering new bo
 git clone https://github.com/yourusername/book-tracker.git
 cd book-tracker
 
-2. Create and activate a virtual environment:
+2. Check Python version:
 ```bash
-python -m venv venv
+python --version
+```   
+
+3.Create and activate a virtual environment:
+```bash
+python -m venv books-env
 # On Windows:
-venv\Scripts\activate
+books-env\Scripts\activate
 # On macOS/Linux:
-source venv/bin/activate
+source books-env/bin/activate
 ```
 
-3. Install dependencies:
+4. Install dependencies:
 ```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the project root:
+5. Alternatively, install dependencies using pipenv:
+```bash
+pipenv install
+pipenv install -r requirements.txt
+pipenv shell
+```
+
+6. Create a `.env` file in the project root:
 ```plaintext
-FLASK_SECRET_KEY=your_secret_key_here
+FLASK_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(16))')
 GOOGLE_BOOKS_API_KEY=your_google_books_api_key_here
 ```
 
-5. Run the application:
+7. Run the application:
 ```bash
 python app.py
 ```
