@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, create_engine, Enum, Float, Boolean, JSON
-from sqlalchemy.orm import relationship, declarative_base
-import enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 

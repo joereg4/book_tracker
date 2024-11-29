@@ -1,23 +1,9 @@
 from flask import Blueprint, render_template, request
 from sqlalchemy import func, extract
-from sqlalchemy.sql import desc
 from datetime import datetime
 from collections import Counter
 from models import Book
 from helper import create_session
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-import nltk
-import re
-
-# Add this at the top of the file, after imports
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('punkt_tab')
 
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 

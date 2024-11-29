@@ -1,4 +1,3 @@
-import pytest
 from models import Book
 from datetime import datetime
 

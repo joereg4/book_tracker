@@ -1,7 +1,4 @@
-import pytest
-from flask import url_for
 from models import Book
-from datetime import datetime
 from routes.books import strip_html_tags
 
 def test_strip_html_tags():

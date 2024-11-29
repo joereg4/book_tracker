@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from sqlalchemy import create_engine
 from datetime import datetime
 import re
 from googleapiclient.discovery import build

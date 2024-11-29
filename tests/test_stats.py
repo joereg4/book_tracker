@@ -1,4 +1,3 @@
-import pytest
 from datetime import datetime
 from models import Book
 from flask import url_for
@@ -78,7 +77,11 @@ def test_dashboard_with_books(client, db_session, app):
         response = client.get('/stats/?year=2024')
         assert response.status_code == 200
         assert b'[TEST] Book 1' in response.data
-        assert b'[TEST] Book 2' not in response.data
+        
+        # Verify that Book 2 doesn't appear in the "Books Read in 2024" section
+        assert b'Books Read in 2024' in response.data
+        assert b'January 01, 2024' in response.data
+        assert b'Read on: December 01, 2023' not in response.data
 
 def test_dashboard_categories(client, db_session, app):
     """Test category statistics"""
