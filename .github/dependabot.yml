@@ -1,0 +1,32 @@
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "github-actions"
+      - "dependencies"
+
+  # Maintain dependencies for pip (Python packages)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "python"
+      - "dependencies"
+    # Raise pull requests to update dependencies against main branch
+    target-branch: "main"
+    # Add reviewers
+    reviewers:
+      - "joereg4"
+    # Group all minor and patch updates together
+    groups:
+      python-packages:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
