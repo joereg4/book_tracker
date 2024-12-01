@@ -2,7 +2,7 @@ import pytest
 import os
 import sys
 import tempfile
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 # Add project root to Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,6 +24,49 @@ def database():
     # Create tables
     engine = create_engine(database_url)
     Base.metadata.create_all(engine)
+    
+    # Create FTS table and triggers
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS books_fts USING fts5(
+                title, 
+                authors, 
+                description, 
+                categories,
+                publisher,
+                content='books',
+                content_rowid='id',
+                tokenize='porter'
+            );
+        """))
+        
+        # Create triggers
+        conn.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS books_ai AFTER INSERT ON books BEGIN
+                INSERT INTO books_fts(rowid, title, authors, description, categories, publisher)
+                VALUES (new.id, new.title, new.authors, new.description, new.categories, new.publisher);
+            END;
+        """))
+        
+        conn.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS books_au AFTER UPDATE ON books BEGIN
+                UPDATE books_fts SET
+                    title = new.title,
+                    authors = new.authors,
+                    description = new.description,
+                    categories = new.categories,
+                    publisher = new.publisher
+                WHERE rowid = old.id;
+            END;
+        """))
+        
+        conn.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS books_ad AFTER DELETE ON books BEGIN
+                DELETE FROM books_fts WHERE rowid = old.id;
+            END;
+        """))
+        
+        conn.commit()
     
     yield database_url
     
