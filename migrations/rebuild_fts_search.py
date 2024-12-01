@@ -13,7 +13,7 @@ def rebuild_fts_table():
         conn.execute(text("DROP TRIGGER IF EXISTS books_ad"))
         conn.execute(text("DROP TABLE IF EXISTS books_fts"))
         
-        # Create FTS5 virtual table with enhanced configuration
+        # Create FTS5 virtual table
         conn.execute(text("""
             CREATE VIRTUAL TABLE books_fts USING fts5(
                 title, 
@@ -21,108 +21,54 @@ def rebuild_fts_table():
                 description, 
                 categories,
                 publisher,
-                tokenize='porter unicode61 remove_diacritics 1',
-                prefix='1 2 3',
-                content=''
+                tokenize='porter unicode61 remove_diacritics 1'
             );
-        """))
-        
-        # Create enhanced triggers that handle NULL values and special characters
-        conn.execute(text("""
-            CREATE TRIGGER books_ai AFTER INSERT ON books BEGIN
-                INSERT INTO books_fts(
-                    rowid, 
-                    title, 
-                    authors, 
-                    description, 
-                    categories, 
-                    publisher
-                ) VALUES (
-                    new.id, 
-                    COALESCE(new.title, ''),
-                    COALESCE(new.authors, ''),
-                    COALESCE(new.description, ''),
-                    COALESCE(new.categories, ''),
-                    COALESCE(new.publisher, '')
-                );
-            END;
-        """))
-        
-        conn.execute(text("""
-            CREATE TRIGGER books_au AFTER UPDATE ON books BEGIN
-                INSERT INTO books_fts(
-                    books_fts,
-                    rowid, 
-                    title, 
-                    authors, 
-                    description, 
-                    categories, 
-                    publisher
-                ) VALUES(
-                    'delete',
-                    old.id,
-                    '',
-                    '',
-                    '',
-                    '',
-                    ''
-                );
-                INSERT INTO books_fts(
-                    rowid, 
-                    title, 
-                    authors, 
-                    description, 
-                    categories, 
-                    publisher
-                ) VALUES (
-                    new.id,
-                    COALESCE(new.title, ''),
-                    COALESCE(new.authors, ''),
-                    COALESCE(new.description, ''),
-                    COALESCE(new.categories, ''),
-                    COALESCE(new.publisher, '')
-                );
-            END;
-        """))
-        
-        conn.execute(text("""
-            CREATE TRIGGER books_ad AFTER DELETE ON books BEGIN
-                INSERT INTO books_fts(books_fts, rowid) VALUES('delete', old.id);
-            END;
         """))
         
         # Populate FTS table with existing data
         conn.execute(text("""
-            INSERT INTO books_fts(rowid, title, authors, description, categories, publisher)
+            INSERT INTO books_fts(
+                rowid, 
+                title, 
+                authors, 
+                description, 
+                categories,
+                publisher
+            )
             SELECT 
                 id,
-                COALESCE(TRIM(title), ''),
-                COALESCE(TRIM(authors), ''),
-                COALESCE(TRIM(description), ''),
-                COALESCE(TRIM(categories), ''),
-                COALESCE(TRIM(publisher), '')
-            FROM books;
+                title,
+                authors,
+                COALESCE(description, ''),
+                COALESCE(categories, ''),
+                COALESCE(publisher, '')
+            FROM books 
+            WHERE title IS NOT NULL AND authors IS NOT NULL;
         """))
         
         conn.commit()
         
-        # Verify the rebuild
-        count = conn.execute(text("SELECT COUNT(*) FROM books_fts")).scalar()
-        print(f"Reindexed {count} books in FTS table")
-        
-        # Debug: Show some test entries
-        print("\nVerifying test entries:")
-        test_entries = conn.execute(text("""
-            SELECT b.title, f.title as fts_title 
+        # Debug: Show sample data
+        print("\nVerifying FTS content:")
+        sample = conn.execute(text("""
+            SELECT 
+                b.title,
+                f.title as fts_title,
+                f.authors as fts_authors,
+                f.description as fts_desc
             FROM books b 
             JOIN books_fts f ON b.id = f.rowid 
-            WHERE b.title LIKE '[TEST]%' 
-            LIMIT 5
-        """)).fetchall()
+            LIMIT 1
+        """)).fetchone()
         
-        for entry in test_entries:
-            print(f"Book: {entry[0]}")
-            print(f"FTS:  {entry[1]}\n")
+        if sample:
+            print("Sample book:")
+            print(f"Original title: {sample[0]}")
+            print(f"FTS title: {sample[1]}")
+            print(f"FTS authors: {sample[2]}")
+            print(f"FTS description: {sample[3][:100]}...")
+        else:
+            print("No books found in FTS table")
 
 if __name__ == "__main__":
     rebuild_fts_table() 
