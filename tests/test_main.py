@@ -1,5 +1,5 @@
 from datetime import datetime
-from models import Book
+from models import Book, User
 
 def test_index_empty(client, db_session, app):
     """Test index view with empty database"""
@@ -19,14 +19,23 @@ def test_index_empty(client, db_session, app):
 def test_index_with_books(client, db_session, app):
     """Test index view with sample books"""
     with app.test_request_context():
-        # Create test books
+        # Create test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password='testpass'
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Create test books with user_id
         books = [
             Book(
                 title='[TEST] Reading Book',
                 authors='Author 1',
                 google_books_id='test1',
                 status='reading',
-                thumbnail='http://example.com/thumb1.jpg'
+                user_id=user.id
             ),
             Book(
                 title='[TEST] To Read Book 1',
