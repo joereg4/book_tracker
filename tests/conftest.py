@@ -82,12 +82,20 @@ def database():
 def app(database):
     """Create test application"""
     from app import app
-    app.config.update({
+    
+    # Create the actual application instance
+    test_app = app
+    
+    test_app.config.update({
         'TESTING': True,
         'DATABASE_URL': database,
-        'SERVER_NAME': 'test.local'
+        'SERVER_NAME': 'test.local',
+        'WTF_CSRF_ENABLED': False,
+        'SECRET_KEY': 'test_secret_key'
     })
-    return app
+    
+    # Return the actual application instance, not the function
+    return test_app
 
 @pytest.fixture
 def client(app):
@@ -108,3 +116,14 @@ def db_session(database):
     finally:
         session.rollback()
         session.close() 
+
+@pytest.fixture
+def app_context(app):
+    with app.app_context():
+        with app.test_request_context():
+            yield
+
+@pytest.fixture(autouse=True)
+def setup_test_env(app_context):
+    """Automatically set up test environment for all tests"""
+    pass 

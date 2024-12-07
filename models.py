@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship
+from flask_login import UserMixin
 
 Base = declarative_base()
 
@@ -8,6 +9,7 @@ class Book(Base):
     __tablename__ = 'books'
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String, nullable=False)
     authors = Column(String, nullable=False)
     isbn = Column(String)
@@ -35,6 +37,8 @@ class Book(Base):
     
     content_version = Column(String)
     is_ebook = Column(Boolean)
+    
+    user = relationship('User', back_populates='books')
     
     def __repr__(self):
         return f"<Book(title='{self.title}', authors='{self.authors}', status='{self.status}')>"
@@ -85,3 +89,18 @@ class Book(Base):
         # Sale info
         sale_info = item.get('saleInfo', {})
         self.is_ebook = sale_info.get('isEbook', False)
+
+class User(UserMixin, Base):
+    __tablename__ = 'users'
+    
+    id = Column(Integer, primary_key=True)
+    username = Column(String(80), unique=True, nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
+    password = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Direct relationship to books
+    books = relationship('Book', back_populates='user')
+    
+    def __repr__(self):
+        return f'<User {self.username}>'
