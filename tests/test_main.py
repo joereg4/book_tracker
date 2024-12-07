@@ -16,23 +16,6 @@ def test_index_empty(client):
 def test_index_empty_authenticated(client, db_session, app):
     """Test index view with authenticated user but no books"""
     with app.test_request_context():
-        # Create and login test user
-        user = User(
-            username='testuser',
-            email='test@example.com',
-            password=generate_password_hash('testpass')
-        )
-        db_session.add(user)
-        db_session.commit()
-        
-        # Add debug print statements
-        print(f"Created user with ID: {user.id}")
-        
-        with client.session_transaction() as session:
-            session['_user_id'] = str(user.id)
-            # Add debug print statement
-            print(f"Session user_id: {session.get('_user_id')}")
-        
         response = client.get('/')
         assert response.status_code == 200
         
@@ -55,16 +38,37 @@ def test_index_with_books(client, db_session, app):
         )
         db_session.add(user)
         db_session.commit()
-        
-        with client.session_transaction() as session:
-            session['_user_id'] = str(user.id)
-        
-        # Add test books
+
+        # Create test books with user_id
         books = [
-            Book(title='[TEST] To Read Book 1', authors='Author 1', status='to_read', user_id=user.id),
-            Book(title='[TEST] To Read Book 2', authors='Author 2', status='to_read', user_id=user.id),
-            Book(title='[TEST] Reading Book', authors='Author 1', status='reading', user_id=user.id),
-            Book(title='[TEST] Read Book', authors='Author 3', status='read', user_id=user.id)
+            Book(
+                title='[TEST] Reading Book',
+                authors='Author 1',
+                google_books_id='test1',
+                status='reading',
+                user_id=user.id
+            ),
+            Book(
+                title='[TEST] To Read Book 1',
+                authors='Author 2',
+                google_books_id='test2',
+                status='to_read',
+                created_at=datetime(2024, 1, 1)
+            ),
+            Book(
+                title='[TEST] To Read Book 2',
+                authors='Author 3',
+                google_books_id='test3',
+                status='to_read',
+                created_at=datetime(2024, 1, 2)
+            ),
+            Book(
+                title='[TEST] Read Book',
+                authors='Author 4',
+                google_books_id='test4',
+                status='read',
+                date_read=datetime(2024, 1, 1)
+            )
         ]
         for book in books:
             db_session.add(book)
