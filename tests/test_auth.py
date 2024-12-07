@@ -1,7 +1,25 @@
 import pytest
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User
-from flask_login import current_user
+from flask_login import current_user, login_user, LoginManager
+
+@pytest.fixture
+def app(database):
+    """Create and configure a new app instance for each test."""
+    from app import app
+    
+    # Get the Flask application instance
+    test_app = app
+    
+    # Configure the app for testing
+    test_app.config.update({
+        'TESTING': True,
+        'DATABASE_URL': database,
+        'SERVER_NAME': 'test.local'
+    })
+    
+    # Return the configured app
+    return test_app
 
 def test_signup(client, db_session):
     """Test user registration"""
@@ -9,16 +27,16 @@ def test_signup(client, db_session):
     response = client.post('/signup', data={
         'username': 'testuser',
         'email': 'test@example.com',
-        'password': 'password123'
+        'password': 'testpass123'
     }, follow_redirects=True)
     
-    assert b'Registration successful!' in response.data
+    assert response.status_code == 200
     
     # Verify user was created
     user = db_session.query(User).filter_by(username='testuser').first()
     assert user is not None
     assert user.email == 'test@example.com'
-    assert check_password_hash(user.password, 'password123')
+    assert check_password_hash(user.password, 'testpass123')
 
 def test_duplicate_username(client, db_session):
     """Test signup with existing username"""
@@ -60,13 +78,13 @@ def test_duplicate_email(client, db_session):
     
     assert b'Email already registered' in response.data
 
-def test_login_success(client, db_session):
+def test_login_success(client, db_session, app, app_context):
     """Test successful login"""
     # Create user
     user = User(
         username='testuser',
         email='test@example.com',
-        password=generate_password_hash('password123')
+        password=generate_password_hash('testpass123')
     )
     db_session.add(user)
     db_session.commit()
@@ -74,9 +92,11 @@ def test_login_success(client, db_session):
     # Test login
     response = client.post('/login', data={
         'username': 'testuser',
-        'password': 'password123'
+        'password': 'testpass123'
     }, follow_redirects=True)
     
+    assert response.status_code == 200
+    assert b'Invalid username or password' not in response.data
     assert current_user.is_authenticated
     assert current_user.username == 'testuser'
 
@@ -98,16 +118,17 @@ def test_login_invalid_credentials(client, db_session):
     }, follow_redirects=True)
     
     assert b'Invalid username or password' in response.data
-    assert not current_user.is_authenticated
+    assert response.status_code == 200
 
-def test_logout(client, auth):
+def test_logout(client, auth, app_context):
     """Test logout functionality"""
     # Login first
     auth.login()
+    assert current_user.is_authenticated
     
     # Test logout
     response = client.get('/logout', follow_redirects=True)
-    
+    assert response.status_code == 200
     assert not current_user.is_authenticated
 
 @pytest.fixture

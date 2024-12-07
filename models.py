@@ -90,7 +90,7 @@ class Book(Base):
         sale_info = item.get('saleInfo', {})
         self.is_ebook = sale_info.get('isEbook', False)
 
-class User(Base, UserMixin):
+class User(UserMixin, Base):
     __tablename__ = 'users'
     
     id = Column(Integer, primary_key=True)
