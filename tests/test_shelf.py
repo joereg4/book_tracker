@@ -1,5 +1,6 @@
 from models import Book
 from datetime import datetime
+from sqlalchemy.sql import text
 
 def test_shelf_view_empty(client, db_session, app):
     """Test shelf view with empty database"""
@@ -78,6 +79,10 @@ def test_shelf_view_with_books(client, db_session, app):
 def test_shelf_search(client, db_session, app):
     """Test shelf search functionality"""
     with app.test_request_context():
+        # Add debug: Print current books in FTS
+        result = db_session.execute(text("SELECT * FROM books_fts;")).fetchall()
+        print("\nCurrent FTS contents:", result)
+        
         # Create test books
         books = [
             Book(

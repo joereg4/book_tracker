@@ -7,7 +7,8 @@ from routes.auth import bp as auth_bp
 from routes.profile import bp as profile_bp
 from flask_login import LoginManager
 from models import User
-from helper import create_session
+from helper import create_session, init_db
+from flask_migrate import Migrate
 import os
 from datetime import timedelta
 from flask_login import login_user
@@ -19,6 +20,9 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 # Configure session handling
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+
+# Initialize database and migrations
+engine = init_db(app)
 
 # Register blueprints
 app.register_blueprint(main_bp)

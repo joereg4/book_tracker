@@ -9,74 +9,91 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 from models import Base
+from tests.config import get_test_db_url, cleanup_test_db
 
 @pytest.fixture(scope='session', autouse=True)
 def database():
     """Create a temporary test database"""
-    # Create temporary database file
-    db_fd, db_path = tempfile.mkstemp()
+    # Create temporary database file in /tmp
+    db_fd, db_path = tempfile.mkstemp(prefix='test_books_', suffix='.db')
     database_url = f'sqlite:///{db_path}'
     
-    # Force test database URL in environment BEFORE any imports
+    # Set test database URL
     os.environ['TEST_DATABASE_URL'] = database_url
-    os.environ['TESTING'] = 'True'
     
-    # Create tables
-    engine = create_engine(database_url)
-    Base.metadata.create_all(engine)
-    
-    # Create FTS table and triggers
-    with engine.connect() as conn:
-        conn.execute(text("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS books_fts USING fts5(
-                title, 
-                authors, 
-                description, 
-                categories,
-                publisher,
-                content='books',
-                content_rowid='id',
-                tokenize='porter'
-            );
-        """))
+    try:
+        # Create engine and tables
+        engine = create_engine(database_url)
+        Base.metadata.create_all(engine)
         
-        # Create triggers
-        conn.execute(text("""
-            CREATE TRIGGER IF NOT EXISTS books_ai AFTER INSERT ON books BEGIN
-                INSERT INTO books_fts(rowid, title, authors, description, categories, publisher)
-                VALUES (new.id, new.title, new.authors, new.description, new.categories, new.publisher);
-            END;
-        """))
+        # Setup FTS
+        with engine.connect() as conn:
+            conn.execute(text("""
+                CREATE VIRTUAL TABLE IF NOT EXISTS books_fts USING fts5(
+                    title, 
+                    authors, 
+                    description, 
+                    categories,
+                    publisher,
+                    content='books',
+                    content_rowid='id',
+                    tokenize='porter unicode61 remove_diacritics 2'
+                );
+            """))
+            
+            # Update the insert trigger to handle NULL values
+            conn.execute(text("""
+                CREATE TRIGGER IF NOT EXISTS books_ai AFTER INSERT ON books BEGIN
+                    INSERT INTO books_fts(rowid, title, authors, description, categories, publisher)
+                    VALUES (
+                        new.id, 
+                        COALESCE(new.title, ''),
+                        COALESCE(new.authors, ''),
+                        COALESCE(new.description, ''),
+                        COALESCE(new.categories, ''),
+                        COALESCE(new.publisher, '')
+                    );
+                END;
+            """))
+            
+            conn.execute(text("""
+                CREATE TRIGGER IF NOT EXISTS books_au AFTER UPDATE ON books BEGIN
+                    UPDATE books_fts SET
+                        title = new.title,
+                        authors = new.authors,
+                        description = new.description,
+                        categories = new.categories,
+                        publisher = new.publisher
+                    WHERE rowid = old.id;
+                END;
+            """))
+            
+            conn.execute(text("""
+                CREATE TRIGGER IF NOT EXISTS books_ad AFTER DELETE ON books BEGIN
+                    DELETE FROM books_fts WHERE rowid = old.id;
+                END;
+            """))
+            
+            # Add debug verification
+            conn.execute(text("""
+                CREATE TRIGGER IF NOT EXISTS books_ai_verify AFTER INSERT ON books BEGIN
+                    SELECT RAISE(ROLLBACK, 'FTS not updated')
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM books_fts WHERE rowid = new.id
+                    );
+                END;
+            """))
+            
+            conn.commit()
         
-        conn.execute(text("""
-            CREATE TRIGGER IF NOT EXISTS books_au AFTER UPDATE ON books BEGIN
-                UPDATE books_fts SET
-                    title = new.title,
-                    authors = new.authors,
-                    description = new.description,
-                    categories = new.categories,
-                    publisher = new.publisher
-                WHERE rowid = old.id;
-            END;
-        """))
+        yield database_url
         
-        conn.execute(text("""
-            CREATE TRIGGER IF NOT EXISTS books_ad AFTER DELETE ON books BEGIN
-                DELETE FROM books_fts WHERE rowid = old.id;
-            END;
-        """))
-        
-        conn.commit()
-    
-    yield database_url
-    
-    # Cleanup
-    os.close(db_fd)
-    os.unlink(db_path)
-    
-    # Remove test environment variables
-    del os.environ['TEST_DATABASE_URL']
-    del os.environ['TESTING']
+    finally:
+        # Clean up
+        if 'TEST_DATABASE_URL' in os.environ:
+            del os.environ['TEST_DATABASE_URL']
+        os.close(db_fd)
+        os.unlink(db_path)
 
 @pytest.fixture(scope='session')
 def app(database):
@@ -112,6 +129,8 @@ def db_session(database):
         # Clear all tables after each test
         for table in reversed(Base.metadata.sorted_tables):
             session.execute(table.delete())
+        # Add explicit cleanup for FTS table
+        session.execute(text("DELETE FROM books_fts;"))
         session.commit()
     finally:
         session.rollback()
@@ -127,3 +146,10 @@ def app_context(app):
 def setup_test_env(app_context):
     """Automatically set up test environment for all tests"""
     pass 
+
+@pytest.fixture(autouse=True)
+def reset_db_engine():
+    """Reset database engine before each test"""
+    from helper import reset_engine
+    reset_engine()
+    yield
