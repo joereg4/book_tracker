@@ -7,6 +7,30 @@ def test_index_empty(client, db_session, app):
         response = client.get('/')
         assert response.status_code == 200
         
+        # Check welcome message for non-authenticated users
+        assert b'Welcome to Book Tracker' in response.data
+        assert b'Keep track of your reading journey' in response.data
+        assert b'Login' in response.data
+        assert b'Sign Up' in response.data
+
+def test_index_empty_authenticated(client, db_session, app):
+    """Test index view with empty database for authenticated user"""
+    with app.test_request_context():
+        # Create and login test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password='testpass'
+        )
+        db_session.add(user)
+        db_session.commit()
+        
+        with client.session_transaction() as session:
+            session['_user_id'] = str(user.id)
+        
+        response = client.get('/')
+        assert response.status_code == 200
+        
         # Check reading overview counts
         assert b'<span class="badge bg-primary rounded-pill">0</span>' in response.data  # To Read
         assert b'<span class="badge bg-secondary rounded-pill">0</span>' in response.data  # Reading
@@ -28,6 +52,10 @@ def test_index_with_books(client, db_session, app):
         db_session.add(user)
         db_session.commit()
 
+        # Login the test user
+        with client.session_transaction() as session:
+            session['_user_id'] = str(user.id)
+
         # Create test books with user_id
         books = [
             Book(
@@ -42,21 +70,24 @@ def test_index_with_books(client, db_session, app):
                 authors='Author 2',
                 google_books_id='test2',
                 status='to_read',
-                created_at=datetime(2024, 1, 1)
+                created_at=datetime(2024, 1, 1),
+                user_id=user.id
             ),
             Book(
                 title='[TEST] To Read Book 2',
                 authors='Author 3',
                 google_books_id='test3',
                 status='to_read',
-                created_at=datetime(2024, 1, 2)
+                created_at=datetime(2024, 1, 2),
+                user_id=user.id
             ),
             Book(
                 title='[TEST] Read Book',
                 authors='Author 4',
                 google_books_id='test4',
                 status='read',
-                date_read=datetime(2024, 1, 1)
+                date_read=datetime(2024, 1, 1),
+                user_id=user.id
             )
         ]
         
