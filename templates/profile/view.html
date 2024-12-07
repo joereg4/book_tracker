@@ -29,19 +29,19 @@
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     Books To Read
                                     <span class="badge bg-primary rounded-pill">
-                                        {{ current_user.books|selectattr('status', 'equalto', 'to_read')|list|length }}
+                                        {{ user.books|selectattr('status', 'equalto', 'to_read')|list|length }}
                                     </span>
                                 </div>
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     Currently Reading
                                     <span class="badge bg-secondary rounded-pill">
-                                        {{ current_user.books|selectattr('status', 'equalto', 'reading')|list|length }}
+                                        {{ user.books|selectattr('status', 'equalto', 'reading')|list|length }}
                                     </span>
                                 </div>
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     Books Read
                                     <span class="badge bg-success rounded-pill">
-                                        {{ current_user.books|selectattr('status', 'equalto', 'read')|list|length }}
+                                        {{ user.books|selectattr('status', 'equalto', 'read')|list|length }}
                                     </span>
                                 </div>
                             </div>
