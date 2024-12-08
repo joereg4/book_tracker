@@ -14,15 +14,28 @@ def signup():
             username = request.form.get('username')
             email = request.form.get('email')
             password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
 
-            user = db.query(User).filter_by(username=username).first()
-            if user:
-                flash('Username already exists')
+            # Validate required fields
+            if not all([username, email, password, confirm_password]):
+                flash('All fields are required.', 'error')
+                return redirect(url_for('auth.signup'))
+            
+            # Check if passwords match
+            if password != confirm_password:
+                flash('Passwords do not match.', 'error')
                 return redirect(url_for('auth.signup'))
 
+            # Check if username exists
+            user = db.query(User).filter_by(username=username).first()
+            if user:
+                flash('Username already exists.', 'error')
+                return redirect(url_for('auth.signup'))
+
+            # Check if email exists
             user = db.query(User).filter_by(email=email).first()
             if user:
-                flash('Email already registered')
+                flash('Email already registered.', 'error')
                 return redirect(url_for('auth.signup'))
 
             new_user = User(
@@ -34,7 +47,7 @@ def signup():
             db.add(new_user)
             db.commit()
 
-            flash('Registration successful! Please log in.')
+            flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('auth.login'))
         finally:
             db.close()

@@ -21,61 +21,63 @@ def app(database):
     # Return the configured app
     return test_app
 
-def test_signup(client, db_session):
-    """Test user registration"""
-    # Test successful signup
+def test_signup_success(client, db_session):
+    """Test successful signup"""
     response = client.post('/signup', data={
         'username': 'testuser',
         'email': 'test@example.com',
-        'password': 'testpass123'
+        'password': 'testpass123',
+        'confirm_password': 'testpass123'
     }, follow_redirects=True)
     
-    assert response.status_code == 200
+    assert b'Registration successful!' in response.data
     
-    # Verify user was created
+    # Verify user was created in database
     user = db_session.query(User).filter_by(username='testuser').first()
     assert user is not None
     assert user.email == 'test@example.com'
     assert check_password_hash(user.password, 'testpass123')
 
-def test_duplicate_username(client, db_session):
-    """Test signup with existing username"""
-    # Create initial user
-    user = User(
-        username='testuser',
-        email='original@example.com',
-        password=generate_password_hash('password123')
-    )
-    db_session.add(user)
-    db_session.commit()
+def test_signup_validation(client, db_session):
+    """Test signup validation"""
+    # Test missing fields
+    response = client.post('/signup', data={}, follow_redirects=True)
+    assert b'All fields are required' in response.data
     
-    # Try to create duplicate username
+    # Test password mismatch
     response = client.post('/signup', data={
         'username': 'testuser',
-        'email': 'new@example.com',
-        'password': 'password123'
+        'email': 'test@example.com',
+        'password': 'testpass123',
+        'confirm_password': 'different'
     }, follow_redirects=True)
+    assert b'Passwords do not match' in response.data
     
-    assert b'Username already exists' in response.data
-
-def test_duplicate_email(client, db_session):
-    """Test signup with existing email"""
-    # Create initial user
+    # Create a user for duplicate testing
     user = User(
-        username='original',
-        email='test@example.com',
+        username='existinguser',
+        email='existing@example.com',
         password=generate_password_hash('password123')
     )
     db_session.add(user)
     db_session.commit()
     
-    # Try to create duplicate email
+    # Test duplicate username
+    response = client.post('/signup', data={
+        'username': 'existinguser',
+        'email': 'new@example.com',
+        'password': 'password123',
+        'confirm_password': 'password123'
+    }, follow_redirects=True)
+    assert b'Username already exists' in response.data
+    
+    # Test duplicate email
     response = client.post('/signup', data={
         'username': 'newuser',
-        'email': 'test@example.com',
-        'password': 'password123'
+        'email': 'existing@example.com',
+        'password': 'password123',
+        'confirm_password': 'password123'
     }, follow_redirects=True)
-    
     assert b'Email already registered' in response.data
 
 def test_login_success(client, db_session, app, app_context):
@@ -153,3 +155,39 @@ def auth(client, db_session):
             }, follow_redirects=True)
     
     return AuthActions() 
+
+def test_signup_password_match(client, db_session):
+    """Test signup with matching passwords"""
+    response = client.post('/signup', data={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'testpass123',
+        'confirm_password': 'testpass123'
+    }, follow_redirects=True)
+    
+    # Should succeed and redirect to login
+    assert response.status_code == 200
+    assert b'Registration successful!' in response.data
+    
+    # Verify user was created
+    user = db_session.query(User).filter_by(username='testuser').first()
+    assert user is not None
+    assert user.email == 'test@example.com'
+    assert check_password_hash(user.password, 'testpass123')
+
+def test_signup_password_mismatch(client, db_session):
+    """Test signup with non-matching passwords"""
+    response = client.post('/signup', data={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'testpass123',
+        'confirm_password': 'differentpass'
+    }, follow_redirects=True)
+    
+    # Should fail with error message
+    assert response.status_code == 200
+    assert b'Passwords do not match' in response.data
+    
+    # Verify no user was created
+    user = db_session.query(User).filter_by(username='testuser').first()
+    assert user is None
