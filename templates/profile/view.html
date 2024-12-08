@@ -55,32 +55,6 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="text-muted mb-3">Reading Statistics</h5>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Books To Read
-                                    <span class="badge bg-primary rounded-pill">
-                                        {{ user.books|selectattr('status', 'equalto', 'to_read')|list|length }}
-                                    </span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Currently Reading
-                                    <span class="badge bg-secondary rounded-pill">
-                                        {{ user.books|selectattr('status', 'equalto', 'reading')|list|length }}
-                                    </span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Books Read
-                                    <span class="badge bg-success rounded-pill">
-                                        {{ user.books|selectattr('status', 'equalto', 'read')|list|length }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="row mt-4">
                         <div class="col">
                             <hr>

@@ -29,12 +29,6 @@ def test_profile_view_authenticated(client, db_session, app):
         assert b'testuser' in response.data
         assert b'test@example.com' in response.data
         assert b'January 01, 2024' in response.data
-        
-        # Check reading statistics sections exist
-        assert b'Reading Statistics' in response.data
-        assert b'Books To Read' in response.data
-        assert b'Currently Reading' in response.data
-        assert b'Books Read' in response.data
 
 def test_profile_view_unauthenticated(client):
     """Test profile view redirects for unauthenticated users"""
@@ -44,81 +38,6 @@ def test_profile_view_unauthenticated(client):
     assert response.status_code == 200
     assert b'Please log in to access this page.' in response.data
     assert b'Login' in response.data
-
-def test_profile_reading_statistics(client, db_session, app):
-    """Test profile view shows correct reading statistics"""
-    with app.test_request_context():
-        # Create test user
-        user = User(
-            username='testuser',
-            email='test@example.com',
-            password=generate_password_hash('testpass')
-        )
-        db_session.add(user)
-        db_session.commit()
-
-        # Create test books with different statuses
-        books = [
-            Book(
-                title='Reading Book 1',
-                authors='Author 1',
-                google_books_id='test1',
-                status='reading',
-                user_id=user.id
-            ),
-            Book(
-                title='To Read Book 1',
-                authors='Author 2',
-                google_books_id='test2',
-                status='to_read',
-                user_id=user.id
-            ),
-            Book(
-                title='To Read Book 2',
-                authors='Author 3',
-                google_books_id='test3',
-                status='to_read',
-                user_id=user.id
-            ),
-            Book(
-                title='Read Book 1',
-                authors='Author 4',
-                google_books_id='test4',
-                status='read',
-                user_id=user.id
-            ),
-            Book(
-                title='Read Book 2',
-                authors='Author 5',
-                google_books_id='test5',
-                status='read',
-                user_id=user.id
-            )
-        ]
-        for book in books:
-            db_session.add(book)
-        db_session.commit()
-
-        # Login the user
-        client.post('/login', data={
-            'username': 'testuser',
-            'password': 'testpass'
-        }, follow_redirects=True)
-
-        # Get profile page
-        response = client.get('/profile')
-        assert response.status_code == 200
-
-        # Check for basic sections
-        assert b'Reading Statistics' in response.data
-        assert b'Books To Read' in response.data
-        assert b'Currently Reading' in response.data
-        assert b'Books Read' in response.data
-
-        # Check the counts with exact HTML structure from template
-        assert b'<span class="badge bg-primary rounded-pill">\n                                        2\n                                    </span>' in response.data  # To Read
-        assert b'<span class="badge bg-secondary rounded-pill">\n                                        1\n                                    </span>' in response.data  # Currently Reading
-        assert b'<span class="badge bg-success rounded-pill">\n                                        2\n                                    </span>' in response.data  # Read
 
 def test_profile_update_email(client, db_session, app):
     """Test updating user email address"""
