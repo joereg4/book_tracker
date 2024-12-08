@@ -219,3 +219,56 @@ def test_profile_delete_account(client, db_session, app):
         # Verify we're logged out (check for login link)
         assert b'Login' in response.data
 
+def test_export_books(client, db_session, app):
+    """Test book export functionality"""
+    with app.test_request_context():
+        # Create test user with books
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Add test books
+        books = [
+            Book(
+                title='Test Book 1',
+                authors='Author 1',
+                status='read',
+                created_at=datetime(2024, 1, 1),
+                date_read=datetime(2024, 2, 1),
+                user_id=user.id
+            ),
+            Book(
+                title='Test Book 2',
+                authors='Author 2',
+                status='reading',
+                created_at=datetime(2024, 1, 15),
+                user_id=user.id
+            )
+        ]
+        for book in books:
+            db_session.add(book)
+        db_session.commit()
+
+        # Login
+        client.post('/login', data={
+            'username': 'testuser',
+            'password': 'testpass'
+        }, follow_redirects=True)
+
+        # Test export
+        response = client.get('/profile/export')
+        
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'text/csv; charset=utf-8'
+        assert 'attachment; filename=' in response.headers['Content-Disposition']
+        
+        # Check CSV content
+        content = response.data.decode('utf-8')
+        assert 'Title,Authors,Status,Date Added,Date Read' in content
+        assert 'Test Book 1,Author 1,read,2024-01-01,2024-02-01' in content
+        assert 'Test Book 2,Author 2,reading,2024-01-15,' in content
+

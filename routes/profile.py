@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, send_file
 from flask_login import login_required, current_user
 from helper import create_session
 from models import User
 from sqlalchemy.orm import joinedload
 from werkzeug.security import check_password_hash, generate_password_hash
+import csv
+from io import StringIO, BytesIO
+from datetime import datetime
 
 bp = Blueprint('profile', __name__)
 
@@ -99,5 +102,54 @@ def delete_account():
         
         flash('User not found.', 'error')
         return redirect(url_for('profile.view'))
+    finally:
+        db.close() 
+
+@bp.route('/profile/export')
+@login_required
+def export_books():
+    db = create_session()
+    try:
+        # Get user's books
+        user = db.get(User, current_user.id, options=[
+            joinedload(User.books)
+        ])
+        
+        # Create CSV in memory using StringIO first
+        si = StringIO()
+        writer = csv.writer(si)
+        
+        # Write header
+        writer.writerow(['Title', 'Authors', 'Status', 'Date Added', 'Date Read'])
+        
+        # Write books
+        for book in user.books:
+            writer.writerow([
+                book.title,
+                book.authors,
+                book.status,
+                book.created_at.strftime('%Y-%m-%d'),
+                book.date_read.strftime('%Y-%m-%d') if book.date_read else ''
+            ])
+        
+        # Get the string value and convert to bytes
+        output = si.getvalue().encode('utf-8')
+        si.close()
+        
+        # Create BytesIO object
+        mem = BytesIO()
+        mem.write(output)
+        mem.seek(0)
+        
+        # Generate filename with timestamp
+        filename = f"books_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        return send_file(
+            mem,
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=filename
+        )
+        
     finally:
         db.close() 
