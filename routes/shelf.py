@@ -3,6 +3,7 @@ from models import Book
 from helper import create_session
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
+from flask_login import current_user
 
 bp = Blueprint('shelf', __name__)
 
@@ -21,7 +22,10 @@ def view(shelf):
         search_query = request.args.get('search', '').strip()
         
         # Base query
-        query = db.query(Book).filter_by(status=shelf)
+        query = db.query(Book).filter(
+            Book.status == shelf,
+            Book.user_id == current_user.id
+        )
         
         # Apply search if provided
         if search_query:
