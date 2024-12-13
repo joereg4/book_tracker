@@ -1,5 +1,6 @@
-from models import Book
+from models import User, Book
 from routes.books import strip_html_tags
+from werkzeug.security import generate_password_hash
 
 def test_strip_html_tags():
     """Test HTML tag stripping function"""
@@ -28,6 +29,22 @@ def test_strip_html_tags():
 def test_add_book(client, db_session, app):
     """Test adding a book"""
     with app.test_request_context():
+        # Create and login a test user first
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Login the user
+        client.post('/login', data={
+            'username': 'testuser',
+            'password': 'testpass'
+        }, follow_redirects=True)
+
+        # Now try to add the book
         book_data = {
             'id': 'test123',
             'title': '[TEST] Add Book Function Test',
@@ -41,24 +58,41 @@ def test_add_book(client, db_session, app):
         assert response.status_code == 302  # Redirect after successful add
         
         # Verify book was added to database
-        book = db_session.query(Book).filter_by(google_books_id='test123').first()
+        book = db_session.query(Book).filter_by(google_books_id='test123', user_id=user.id).first()
         assert book is not None
         assert book.title == '[TEST] Add Book Function Test'
         assert book.status == 'to_read'
+        assert book.user_id == user.id  # Verify the user_id was set correctly
 
 def test_update_status(client, db_session, app):
     """Test updating a book's status"""
     with app.test_request_context():
-        # Create test book
+        # Create and login test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Create test book with user_id
         book = Book(
             title='[TEST] Update Status Test Book',
             authors='Test Author',
             google_books_id='test123',
-            status='to_read'
+            status='to_read',
+            user_id=user.id
         )
         db_session.add(book)
         db_session.commit()
-        
+
+        # Login user
+        client.post('/login', data={
+            'username': 'testuser',
+            'password': 'testpass'
+        }, follow_redirects=True)
+
         # Update status
         response = client.post(f'/books/update_status/{book.id}', 
                              data={'status': 'read'})

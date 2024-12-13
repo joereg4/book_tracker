@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 import os
 from helper import create_session
 from models import Book
+from flask_login import login_required, current_user
 
 # Initialize blueprint
 bp = Blueprint('books', __name__, url_prefix='/books')
@@ -124,12 +125,13 @@ def search():
         return render_template('books/search.html', results_per_page=results_per_page)
 
 @bp.route('/add', methods=['POST'])
+@login_required
 def add():
     db = create_session()
     try:
         # Check if book already exists
         google_books_id = request.form.get('id')
-        existing_book = db.query(Book).filter_by(google_books_id=google_books_id).first()
+        existing_book = db.query(Book).filter_by(google_books_id=google_books_id, user_id=current_user.id).first()
         
         if existing_book:
             flash('Book already exists in your library', 'warning')
@@ -159,7 +161,8 @@ def add():
             info_link=request.form.get('info_link'),
             canonical_volume_link=request.form.get('canonical_volume_link'),
             content_version=request.form.get('content_version'),
-            is_ebook=request.form.get('is_ebook') == 'true'
+            is_ebook=request.form.get('is_ebook') == 'true',
+            user_id=current_user.id
         )
         
         if new_book.status == 'read':
@@ -241,12 +244,13 @@ def detail(book_id):  # renamed from book_detail for blueprint consistency
         db.close()
 
 @bp.route('/update_status/<book_id>', methods=['POST'])
+@login_required
 def update_status(book_id):
     """Update a book's status"""
     new_status = request.form.get('status')
     db = create_session()
     try:
-        book = db.query(Book).filter_by(id=book_id).first()
+        book = db.query(Book).filter_by(id=book_id, user_id=current_user.id).first()
         if not book:
             flash('Book not found', 'error')
             return redirect(url_for('main.index'))
@@ -255,7 +259,6 @@ def update_status(book_id):
             db.delete(book)
             flash('Book removed from your library', 'success')
         else:
-            # Explicitly set the status and commit before checking for read status
             book.status = new_status
             if new_status == 'read':
                 book.date_read = datetime.now()
@@ -271,10 +274,11 @@ def update_status(book_id):
     return redirect(request.referrer or url_for('main.index'))
 
 @bp.route('/edit/<book_id>', methods=['GET', 'POST'])
-def edit(book_id):  # renamed from edit_book for blueprint consistency
+@login_required
+def edit(book_id):
     db = create_session()
     try:
-        book = db.query(Book).filter_by(id=book_id).first()
+        book = db.query(Book).filter_by(id=book_id, user_id=current_user.id).first()
         if not book:
             flash('Book not found', 'error')
             return redirect(url_for('main.index'))
