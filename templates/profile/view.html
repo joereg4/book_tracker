@@ -58,9 +58,14 @@
                     <div class="row mb-4">
                         <div class="col">
                             <h5 class="text-muted mb-3">Data Export</h5>
-                            <a href="{{ url_for('profile.export_books') }}" class="btn btn-outline-primary">
-                                Export Books to CSV
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ url_for('profile.export_books', format='csv') }}" class="btn btn-outline-primary">
+                                    Export as CSV
+                                </a>
+                                <a href="{{ url_for('profile.export_books', format='json') }}" class="btn btn-outline-primary">
+                                    Export as JSON
+                                </a>
+                            </div>
                         </div>
                     </div>
 
