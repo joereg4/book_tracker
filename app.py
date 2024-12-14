@@ -5,6 +5,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from utils.email import mail
 from datetime import datetime, UTC
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 
@@ -31,6 +32,11 @@ limiter = Limiter(
 # Expose limiter on app instance for testing
 app.limiter = limiter
 
+# Initialize database
+from models import db, User
+db.init_app(app)
+migrate = Migrate(app, db)
+
 # Import and register blueprints
 from routes.auth import bp as auth_bp
 from routes.books import bp as books_bp
@@ -45,11 +51,6 @@ app.register_blueprint(main_bp)
 app.register_blueprint(profile_bp)
 app.register_blueprint(shelf_bp)
 app.register_blueprint(stats_bp)
-
-# Initialize database
-from models import db, User
-
-db.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
