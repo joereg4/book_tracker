@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from datetime import datetime
 import re
 from googleapiclient.discovery import build
 import os
-from helper import create_session
-from models import Book
 from flask_login import login_required, current_user
+from models import Book, db
+from app import limiter
 
 # Initialize blueprint
 bp = Blueprint('books', __name__, url_prefix='/books')
@@ -42,6 +42,7 @@ def strip_html_tags(text):
     return text.strip()
 
 @bp.route('/search', methods=['GET', 'POST'])
+@limiter.limit("30 per minute")
 def search():
     """Search for books using Google Books API"""
     query = request.form.get('query') or request.args.get('query')
@@ -57,9 +58,8 @@ def search():
             return render_template('books/search.html', results_per_page=results_per_page)
         
         # Get existing books from database for comparison
-        db = create_session()
         existing_books = {book.google_books_id: book.status 
-                         for book in db.query(Book).all()}
+                         for book in Book.query.all()}
         
         # Clean up the query if it's a subject search
         if query.startswith('subject:'):
@@ -127,17 +127,23 @@ def search():
 @bp.route('/add', methods=['POST'])
 @login_required
 def add():
-    db = create_session()
     try:
-        # Check if book already exists
+        # Validate CSRF token
+        csrf_token = request.form.get('csrf_token')
+        if not csrf_token:
+            flash('CSRF token missing', 'error')
+            return 'CSRF token missing', 400
+            
         google_books_id = request.form.get('id')
-        existing_book = db.query(Book).filter_by(google_books_id=google_books_id, user_id=current_user.id).first()
+        existing_book = Book.query.filter_by(
+            google_books_id=google_books_id, 
+            user_id=current_user.id
+        ).first()
         
         if existing_book:
             flash('Book already exists in your library', 'warning')
             return redirect(url_for('main.index'))
         
-        # Create new book with all fields from the form
         new_book = Book(
             google_books_id=google_books_id,
             title=request.form.get('title'),
@@ -164,29 +170,50 @@ def add():
             is_ebook=request.form.get('is_ebook') == 'true',
             user_id=current_user.id
         )
-        
-        if new_book.status == 'read':
-            new_book.date_read = datetime.now()
             
-        db.add(new_book)
-        db.commit()
+        db.session.add(new_book)
+        db.session.commit()
         flash('Book added successfully!', 'success')
         
     except Exception as e:
-        db.rollback()
+        db.session.rollback()
         flash(f'Error adding book: {str(e)}', 'error')
-    finally:
-        db.close()
     
     return redirect(url_for('main.index'))
+
+@bp.route('/update_status/<book_id>', methods=['POST'])
+@login_required
+def update_status(book_id):
+    """Update a book's status"""
+    new_status = request.form.get('status')
+    try:
+        book = db.session.get(Book, book_id)
+        if not book:
+            flash('Book not found', 'error')
+            return redirect(url_for('main.index'))
+            
+        if new_status == 'remove':
+            db.session.delete(book)
+            flash('Book removed from your library', 'success')
+        else:
+            book.status = new_status
+            if new_status == 'read':
+                book.date_read = datetime.now()
+            flash(f'Book moved to "{new_status}" shelf', 'success')
+            
+        db.session.commit()
+        return redirect(request.referrer or url_for('main.index'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating book status: {str(e)}', 'error')
+    return redirect(request.referrer or url_for('main.index'))
 
 @bp.route('/book/<book_id>')
 def detail(book_id):  # renamed from book_detail for blueprint consistency
     """Display details for a specific book from DB or Google Books"""
-    db = create_session()
     try:
         # First check if it's in our database
-        book = db.query(Book).filter_by(id=book_id).first()
+        book = db.session.get(Book, book_id)
         
         # If not in DB, check if it's a Google Books ID
         if not book:
@@ -240,45 +267,16 @@ def detail(book_id):  # renamed from book_detail for blueprint consistency
                              is_google_books=False,
                              current_shelf=book.status,
                              back_url=back_url)
-    finally:
-        db.close()
-
-@bp.route('/update_status/<book_id>', methods=['POST'])
-@login_required
-def update_status(book_id):
-    """Update a book's status"""
-    new_status = request.form.get('status')
-    db = create_session()
-    try:
-        book = db.query(Book).filter_by(id=book_id, user_id=current_user.id).first()
-        if not book:
-            flash('Book not found', 'error')
-            return redirect(url_for('main.index'))
-            
-        if new_status == 'remove':
-            db.delete(book)
-            flash('Book removed from your library', 'success')
-        else:
-            book.status = new_status
-            if new_status == 'read':
-                book.date_read = datetime.now()
-            flash(f'Book moved to "{new_status}" shelf', 'success')
-            
-        db.commit()
-        return redirect(request.referrer or url_for('main.index'))
     except Exception as e:
-        db.rollback()
-        flash(f'Error updating book status: {str(e)}', 'error')
-    finally:
-        db.close()
-    return redirect(request.referrer or url_for('main.index'))
+        print(f"Error occurred: {str(e)}")
+        flash(f'Error displaying book details: {str(e)}')
+        return redirect(url_for('main.index'))
 
 @bp.route('/edit/<book_id>', methods=['GET', 'POST'])
 @login_required
 def edit(book_id):
-    db = create_session()
     try:
-        book = db.query(Book).filter_by(id=book_id, user_id=current_user.id).first()
+        book = db.session.get(Book, book_id)
         if not book:
             flash('Book not found', 'error')
             return redirect(url_for('main.index'))
@@ -355,24 +353,25 @@ def edit(book_id):
                 except ValueError:
                     flash('Invalid date format for date read', 'error')
 
-            db.commit()
+            db.session.commit()
             flash('Book updated successfully!', 'success')
             return redirect(url_for('books.detail', book_id=book_id))
 
         return render_template('books/edit.html', book=book)
-    finally:
-        db.close()
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        flash(f'Error editing book: {str(e)}')
+        return redirect(url_for('main.index'))
 
 @bp.route('/category/<path:category>')
 def category(category):  # renamed from category_view for blueprint consistency
     """View books in a specific category. Using path:category to handle slashes"""
-    db = create_session()
     try:
         # Normalize the category string for database search
         search_category = category.replace(' / ', '/').strip()
         
         # Get all books in this category, ordered by read date
-        books = db.query(Book)\
+        books = Book.query\
             .filter(Book.categories.ilike(f'%{search_category}%'))\
             .filter(Book.status == 'read')\
             .order_by(Book.date_read.desc())\
@@ -381,5 +380,7 @@ def category(category):  # renamed from category_view for blueprint consistency
         return render_template('books/category.html',
                              category=category,
                              books=books)
-    finally:
-        db.close()
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        flash(f'Error displaying category: {str(e)}')
+        return redirect(url_for('main.index'))

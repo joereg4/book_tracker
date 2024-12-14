@@ -1,44 +1,43 @@
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
+from datetime import datetime, timezone, UTC
+from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
-Base = declarative_base()
+db = SQLAlchemy()
 
-class Book(Base):
+class Book(db.Model):
     __tablename__ = 'books'
     
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    title = Column(String, nullable=False)
-    authors = Column(String, nullable=False)
-    isbn = Column(String)
-    isbn13 = Column(String)
-    published_date = Column(String)
-    status = Column(String, nullable=False, default='to_read')
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    date_read = Column(DateTime, nullable=True)
-    google_books_id = Column(String)
-    etag = Column(String)
-    self_link = Column(String)
-    publisher = Column(String)
-    description = Column(Text)
-    page_count = Column(Integer)
-    print_type = Column(String)
-    categories = Column(String)
-    maturity_rating = Column(String)
-    language = Column(String)
-    preview_link = Column(String)
-    info_link = Column(String)
-    canonical_volume_link = Column(String)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    title = db.Column(db.String, nullable=False)
+    authors = db.Column(db.String, nullable=False)
+    isbn = db.Column(db.String)
+    isbn13 = db.Column(db.String)
+    published_date = db.Column(db.String)
+    status = db.Column(db.String, nullable=False, default='to_read')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    date_read = db.Column(db.DateTime, nullable=True)
+    google_books_id = db.Column(db.String)
+    etag = db.Column(db.String)
+    self_link = db.Column(db.String)
+    publisher = db.Column(db.String)
+    description = db.Column(db.Text)
+    page_count = db.Column(db.Integer)
+    print_type = db.Column(db.String)
+    categories = db.Column(db.String)
+    maturity_rating = db.Column(db.String)
+    language = db.Column(db.String)
+    preview_link = db.Column(db.String)
+    info_link = db.Column(db.String)
+    canonical_volume_link = db.Column(db.String)
     
-    small_thumbnail = Column(String)
-    thumbnail = Column(String)
+    small_thumbnail = db.Column(db.String)
+    thumbnail = db.Column(db.String)
     
-    content_version = Column(String)
-    is_ebook = Column(Boolean)
+    content_version = db.Column(db.String)
+    is_ebook = db.Column(db.Boolean)
     
-    user = relationship('User', back_populates='books')
+    user = db.relationship('User', back_populates='books')
     
     def __repr__(self):
         return f"<Book(title='{self.title}', authors='{self.authors}', status='{self.status}')>"
@@ -90,17 +89,18 @@ class Book(Base):
         sale_info = item.get('saleInfo', {})
         self.is_ebook = sale_info.get('isEbook', False)
 
-class User(UserMixin, Base):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
-    id = Column(Integer, primary_key=True)
-    username = Column(String(80), unique=True, nullable=False)
-    email = Column(String(120), unique=True, nullable=False)
-    password = Column(String(128), nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    reset_token = db.Column(db.String(100), unique=True, nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
     
-    # Direct relationship to books
-    books = relationship('Book', back_populates='user')
+    books = db.relationship('Book', back_populates='user', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<User {self.username}>'

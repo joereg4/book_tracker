@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Search Books</h2>
 <form method="GET" class="mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="input-group">
         <input type="text" name="query" class="form-control" placeholder="Search for books..." value="{{ query or '' }}">
         <button type="submit" class="btn btn-primary">Search</button>
@@ -50,6 +51,7 @@
                                 </div>
                             {% else %}
                                 <form action="{{ url_for('books.add') }}" method="POST" class="mt-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="id" value="{{ book.id }}">
                                     <input type="hidden" name="title" value="{{ book.title }}">
                                     <input type="hidden" name="authors" value="{{ book.authors|join(', ') }}">

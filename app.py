@@ -1,51 +1,73 @@
-from flask import Flask
-from routes.books import bp as books_bp
-from routes.stats import bp as stats_bp
-from routes.shelf import bp as shelf_bp
-from routes.main import bp as main_bp
-from routes.auth import bp as auth_bp 
-from routes.profile import bp as profile_bp
+from flask import Flask, jsonify
 from flask_login import LoginManager
-from models import User
-from helper import create_session, init_db
-from flask_migrate import Migrate
-import os
-from datetime import timedelta
-from flask_login import login_user
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from utils.email import mail
+from datetime import datetime, UTC
 
-# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
 
-# Configure session handling
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+# Use TestConfig for testing, regular Config for production
+if app.config.get('TESTING'):
+    app.config.from_object('config.TestConfig')
+else:
+    app.config.from_object('config.Config')
 
-# Initialize database and migrations
-engine = init_db(app)
-
-# Register blueprints
-app.register_blueprint(main_bp)
-app.register_blueprint(books_bp)
-app.register_blueprint(stats_bp)
-app.register_blueprint(shelf_bp)
-app.register_blueprint(auth_bp)
-app.register_blueprint(profile_bp)
-
-# Add max and min functions to Jinja environment
-app.jinja_env.globals.update(max=max, min=min)
-
+# Initialize extensions
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
+csrf = CSRFProtect(app)
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    storage_uri="memory://",
+    default_limits=None  # Remove default limits
+)
+
+# Expose limiter on app instance for testing
+app.limiter = limiter
+
+# Import and register blueprints
+from routes.auth import bp as auth_bp
+from routes.books import bp as books_bp
+from routes.main import bp as main_bp
+from routes.profile import bp as profile_bp
+from routes.shelf import bp as shelf_bp
+from routes.stats import bp as stats_bp
+
+app.register_blueprint(auth_bp)
+app.register_blueprint(books_bp)
+app.register_blueprint(main_bp)
+app.register_blueprint(profile_bp)
+app.register_blueprint(shelf_bp)
+app.register_blueprint(stats_bp)
+
+# Initialize database
+from models import db, User
+
+db.init_app(app)
+
 @login_manager.user_loader
 def load_user(user_id):
-    db = create_session()
-    try:
-        return db.get(User, int(user_id))
-    finally:
-        db.close()
+    user = db.session.get(User, int(user_id))
+    if user:
+        user.last_seen = datetime.now(UTC)
+        db.session.commit()
+    return user
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Apply rate limits to specific routes
+@limiter.limit("5 per minute")
+@app.route("/login-limit-check")
+def login_limit():
+    return jsonify({"status": "ok"})
+
+@limiter.limit("30 per minute")
+@app.route("/books/search-limit-check")
+def search_limit():
+    return jsonify({"status": "ok"})
+
+mail.init_app(app)

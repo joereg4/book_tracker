@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template
 from models import Book
-from helper import create_session
 from flask_login import current_user
 
 bp = Blueprint('main', __name__)
@@ -15,26 +14,22 @@ def index():
                              reading=[],
                              read=[])
     
-    db = create_session()
-    try:
-        to_read = db.query(Book).filter_by(
-            status='to_read',
-            user_id=current_user.id
-        ).order_by(Book.created_at.desc()).all()
-        
-        reading = db.query(Book).filter_by(
-            status='reading',
-            user_id=current_user.id
-        ).order_by(Book.created_at.desc()).all()
-        
-        read = db.query(Book).filter_by(
-            status='read',
-            user_id=current_user.id
-        ).order_by(Book.date_read.desc().nulls_last()).all()
-        
-        return render_template('main/home.html', 
-                             to_read=to_read,
-                             reading=reading,
-                             read=read)
-    finally:
-        db.close() 
+    to_read = Book.query.filter_by(
+        status='to_read',
+        user_id=current_user.id
+    ).order_by(Book.created_at.desc()).all()
+    
+    reading = Book.query.filter_by(
+        status='reading',
+        user_id=current_user.id
+    ).order_by(Book.created_at.desc()).all()
+    
+    read = Book.query.filter_by(
+        status='read',
+        user_id=current_user.id
+    ).order_by(Book.date_read.desc().nulls_last()).all()
+    
+    return render_template('main/home.html', 
+                         to_read=to_read,
+                         reading=reading,
+                         read=read)

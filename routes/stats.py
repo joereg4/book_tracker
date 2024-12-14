@@ -2,38 +2,37 @@ from flask import Blueprint, render_template, request
 from sqlalchemy import func, extract
 from datetime import datetime
 from collections import Counter
-from models import Book
-from helper import create_session
-from flask_login import current_user
+from models import Book, db
+from flask_login import current_user, login_required
 
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 
 @bp.route('/')
+@login_required
 def dashboard():
-    db = create_session()
     try:
         # Get selected year from query params
         selected_year = request.args.get('year', type=int)
         selected_author = request.args.get('author')
         
         # Calculate overall stats
-        total_books = db.query(Book).filter_by(user_id=current_user.id).count()
+        total_books = db.session.query(Book).filter_by(user_id=current_user.id).count()
         current_year = datetime.now().year
-        books_this_year = db.query(Book)\
+        books_this_year = db.session.query(Book)\
             .filter_by(user_id=current_user.id)\
             .filter(Book.date_read.isnot(None))\
             .filter(extract('year', Book.date_read) == current_year)\
             .count()
         
         # Calculate total pages
-        total_pages = db.query(func.sum(Book.page_count))\
+        total_pages = db.session.query(func.sum(Book.page_count))\
             .filter_by(user_id=current_user.id)\
             .filter(Book.status == 'read')\
             .scalar() or 0
             
         # Get books by year read (instead of publication year)
         year_column = extract('year', Book.date_read).label('year')
-        years = db.query(
+        years = db.session.query(
             year_column,
             func.count().label('count')
         ).filter_by(user_id=current_user.id)\
@@ -44,7 +43,7 @@ def dashboard():
          .all()
         
         # Get most read author with count
-        most_read_author = db.query(
+        most_read_author = db.session.query(
             Book.authors,
             func.count().label('count')
         ).filter_by(user_id=current_user.id)\
@@ -56,20 +55,20 @@ def dashboard():
         # Get books for selected year or author
         books = None
         if selected_year:
-            books = db.query(Book)\
+            books = db.session.query(Book)\
                 .filter(Book.status == 'read')\
                 .filter(extract('year', Book.date_read) == selected_year)\
                 .order_by(Book.date_read.desc())\
                 .all()
         elif selected_author:
-            books = db.query(Book)\
+            books = db.session.query(Book)\
                 .filter(Book.authors == selected_author)\
                 .order_by(Book.date_read.desc())\
                 .all()
 
         # Get categories and their counts
         categories = []
-        for book in db.query(Book).filter_by(user_id=current_user.id).all():
+        for book in db.session.query(Book).filter_by(user_id=current_user.id).all():
             if book.categories:
                 cats = [c.strip() for c in book.categories.split(',')]
                 categories.extend(cats)
@@ -79,7 +78,7 @@ def dashboard():
         max_category_count = max(count for _, count in top_categories) if top_categories else 1
         
         # Get most read publisher
-        most_read_publisher = db.query(
+        most_read_publisher = db.session.query(
             Book.publisher,
             func.count().label('count')
         ).filter_by(user_id=current_user.id)\
@@ -89,13 +88,13 @@ def dashboard():
          .first()
         
         # Calculate average pages per book
-        avg_pages = db.query(func.avg(Book.page_count))\
+        avg_pages = db.session.query(func.avg(Book.page_count))\
             .filter_by(user_id=current_user.id)\
             .filter(Book.page_count.isnot(None))\
             .scalar() or 0
 
         # Get longest and shortest books
-        longest_book = db.query(Book)\
+        longest_book = db.session.query(Book)\
             .filter_by(user_id=current_user.id)\
             .filter(Book.page_count.isnot(None))\
             .filter(Book.page_count > 0)\
@@ -103,7 +102,7 @@ def dashboard():
             .order_by(Book.page_count.desc())\
             .first()
             
-        shortest_book = db.query(Book)\
+        shortest_book = db.session.query(Book)\
             .filter_by(user_id=current_user.id)\
             .filter(Book.page_count.isnot(None))\
             .filter(Book.page_count > 0)\
@@ -128,4 +127,4 @@ def dashboard():
                             longest_book=longest_book,
                             shortest_book=shortest_book,)
     finally:
-        db.close() 
+        pass

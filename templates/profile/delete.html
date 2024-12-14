@@ -20,6 +20,7 @@
                     </div>
 
                     <form action="{{ url_for('profile.delete_account') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label for="confirmation" class="form-label">Type DELETE to confirm</label>
                             <input type="text" class="form-control" id="confirmation" name="confirmation" required>

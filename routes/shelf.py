@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, request
-from models import Book
-from helper import create_session
-from sqlalchemy import text
-from sqlalchemy.orm import aliased
+from models import Book, db
 from flask_login import current_user
+from sqlalchemy import text
 
 bp = Blueprint('shelf', __name__)
 
@@ -16,13 +14,12 @@ def view(shelf):
         'read': 'Read'
     }
     
-    db = create_session()
     try:
         # Get search query
         search_query = request.args.get('search', '').strip()
         
         # Base query
-        query = db.query(Book).filter(
+        query = Book.query.filter(
             Book.status == shelf,
             Book.user_id == current_user.id
         )
@@ -44,32 +41,21 @@ def view(shelf):
             # Join all search patterns with OR
             search_pattern = ' OR '.join(search_terms)
             
-            # Debug: Print the search terms
-            print(f"Search terms: {search_pattern}")
+            # Get matching IDs from FTS table
+            sql = text('SELECT rowid FROM books_fts WHERE books_fts MATCH :pattern')
+            matching_ids = [r[0] for r in db.session.execute(sql, {'pattern': search_pattern})]
             
-            # Create FTS subquery with MATCH operator
-            fts_subquery = text("""
-                SELECT rowid as id 
-                FROM books_fts 
-                WHERE books_fts MATCH :search 
-                ORDER BY rank
-            """).params(search=search_pattern).columns(Book.id).subquery()
+            # Filter books by matching IDs
+            query = query.filter(Book.id.in_(matching_ids))
 
-            query = db.query(Book).filter(
-                Book.status == shelf,
-                Book.id.in_(
-                    db.query(fts_subquery.c.id)
-                )
-            ).order_by(Book.created_at.desc())
+        # Apply ordering
+        if shelf == 'read':
+            query = query.order_by(
+                Book.date_read.desc().nulls_last(),
+                Book.created_at.desc()
+            )
         else:
-            # Default ordering without search
-            if shelf == 'read':
-                query = query.order_by(
-                    Book.date_read.desc().nulls_last(),
-                    Book.created_at.desc()
-                )
-            else:
-                query = query.order_by(Book.created_at.desc())
+            query = query.order_by(Book.created_at.desc())
         
         books = query.all()
         return render_template('shelf/view.html',
