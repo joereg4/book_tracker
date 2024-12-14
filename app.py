@@ -43,7 +43,7 @@ login_manager.login_view = 'auth.login'
 def load_user(user_id):
     db = create_session()
     try:
-        return db.query(User).get(int(user_id))
+        return db.get(User, int(user_id))
     finally:
         db.close()
 
