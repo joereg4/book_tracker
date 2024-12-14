@@ -1,8 +1,6 @@
 from datetime import datetime, timezone, UTC
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-
-db = SQLAlchemy()
+from extensions import db
 
 class Book(db.Model):
     __tablename__ = 'books'

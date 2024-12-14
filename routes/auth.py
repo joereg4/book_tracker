@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_wtf.csrf import CSRFProtect
-from models import User, db
-from app import limiter
 from datetime import datetime, timedelta
 import secrets
+from models import User
+from extensions import db, limiter
 from utils.email import send_password_reset_email
 
 bp = Blueprint('auth', __name__)

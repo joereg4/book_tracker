@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 import os
 from flask_login import login_required, current_user
 from models import Book, db
-from app import limiter
+from extensions import limiter
 
 # Initialize blueprint
 bp = Blueprint('books', __name__, url_prefix='/books')

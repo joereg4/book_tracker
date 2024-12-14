@@ -3,7 +3,10 @@ import os
 class Config:
     SECRET_KEY = 'dev'
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(basedir, "instance", "books.db")}'
+    instance_path = os.path.join(basedir, 'instance')
+    if not os.path.exists(instance_path):
+        os.makedirs(instance_path)
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(instance_path, "books.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
     TESTING = False

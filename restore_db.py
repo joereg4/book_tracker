@@ -30,7 +30,10 @@ def restore_database():
     print(f"Found latest backup: {latest_backup}")
     
     # Target database
-    target = "books.db"
+    instance_dir = "instance"
+    if not os.path.exists(instance_dir):
+        os.makedirs(instance_dir)
+    target = os.path.join(instance_dir, "books.db")
     
     # Create a backup of the current database just in case
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
