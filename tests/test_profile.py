@@ -1,6 +1,7 @@
 from datetime import datetime
 from models import User, Book
 from werkzeug.security import generate_password_hash
+import json
 
 def test_profile_view_authenticated(client, db_session, app):
     """Test profile view for authenticated user"""
@@ -271,4 +272,62 @@ def test_export_books(client, db_session, app):
         assert 'Title,Authors,Status,Date Added,Date Read' in content
         assert 'Test Book 1,Author 1,read,2024-01-01,2024-02-01' in content
         assert 'Test Book 2,Author 2,reading,2024-01-15,' in content
+
+def test_export_books_json(client, db_session, app):
+    """Test JSON export functionality"""
+    with app.test_request_context():
+        # Create test user with books
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Add test books
+        books = [
+            Book(
+                title='Test Book 1',
+                authors='Author 1',
+                status='read',
+                created_at=datetime(2024, 1, 1),
+                date_read=datetime(2024, 2, 1),
+                user_id=user.id
+            ),
+            Book(
+                title='Test Book 2',
+                authors='Author 2',
+                status='reading',
+                created_at=datetime(2024, 1, 15),
+                user_id=user.id
+            )
+        ]
+        for book in books:
+            db_session.add(book)
+        db_session.commit()
+
+        # Login
+        client.post('/login', data={
+            'username': 'testuser',
+            'password': 'testpass'
+        }, follow_redirects=True)
+
+        # Test JSON export
+        response = client.get('/profile/export?format=json')
+        
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'application/json'
+        assert 'attachment; filename=' in response.headers['Content-Disposition']
+        
+        # Parse and check JSON content
+        data = json.loads(response.data.decode('utf-8'))
+        assert len(data) == 2
+        assert data[0]['title'] == 'Test Book 1'
+        assert data[0]['authors'] == 'Author 1'
+        assert data[0]['status'] == 'read'
+        assert data[0]['date_added'] == '2024-01-01'
+        assert data[0]['date_read'] == '2024-02-01'
+        assert data[1]['title'] == 'Test Book 2'
+        assert data[1]['date_read'] is None
 
