@@ -1,57 +1,20 @@
-from datetime import datetime
-from models import Book, User, db
-from flask_login import login_user
+from models import User, Book
 from werkzeug.security import generate_password_hash
+from datetime import datetime
+from tests.utils import get_csrf_token, login_user
 
-def test_dashboard_empty(client, db_session, app):
+def test_dashboard_empty(auth_client):
     """Test stats dashboard with empty database"""
-    # Create test user
-    test_user = User(
-        id=1,
-        username='test_user1',
-        email='test1@example.com',
-        password=generate_password_hash('password123')
-    )
-    db_session.add(test_user)
-    db_session.commit()
+    response = auth_client.get('/stats/')
+    assert response.status_code == 200
+    assert b'Reading Statistics' in response.data
+    assert b'Total Books</span>\n                            <span class="badge bg-primary rounded-pill">0</span>' in response.data
+    assert b'Total Pages Read</span>\n                            <span class="badge bg-secondary rounded-pill">0</span>' in response.data
 
-    with client:  # This creates a request context
-        # Get CSRF token
-        response = client.get('/login')
-        csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
-
-        # Login via POST request with CSRF token
-        response = client.post('/login', data={
-            'username': 'test_user1',
-            'password': 'password123',
-            'csrf_token': csrf_token
-        }, follow_redirects=True)
-
-        # Verify login was successful
-        assert response.status_code == 200
-        assert b'Welcome back' in response.data
-
-        # Test empty dashboard
-        response = client.get('/stats/')
-        assert response.status_code == 200
-        assert b'<span>Total Books</span>' in response.data
-        assert b'<span class="badge bg-primary rounded-pill">0</span>' in response.data
-        assert b'<span>Books Read This Year</span>' in response.data
-        assert b'<span class="badge bg-success rounded-pill">0</span>' in response.data
-        assert b'<span>Total Pages Read</span>' in response.data
-        assert b'<span class="badge bg-secondary rounded-pill">0</span>' in response.data
-
-def test_dashboard_with_books(client, db_session, app):
+def test_dashboard_with_books(auth_client, db_session):
     """Test stats dashboard with sample books"""
-    # Create test user
-    test_user = User(
-        id=2,
-        username='test_user2',
-        email='test2@example.com',
-        password=generate_password_hash('password123')
-    )
-    db_session.add(test_user)
-    db_session.commit()
+    # Get the test user
+    user = User.query.filter_by(username='testuser').first()
     
     # Create test books
     books = [
@@ -64,7 +27,7 @@ def test_dashboard_with_books(client, db_session, app):
             page_count=200,
             categories='Fiction, Fantasy',
             publisher='Publisher A',
-            user_id=2
+            user_id=user.id
         ),
         Book(
             title='[TEST] Book 2',
@@ -75,55 +38,33 @@ def test_dashboard_with_books(client, db_session, app):
             page_count=300,
             categories='Fiction, Science Fiction',
             publisher='Publisher B',
-            user_id=2
+            user_id=user.id
         )
     ]
-    
+
     for book in books:
         db_session.add(book)
     db_session.commit()
 
-    with client:  # This creates a request context
-        # Get CSRF token
-        response = client.get('/login')
-        csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+    response = auth_client.get('/stats/')
+    assert response.status_code == 200
+    
+    # Check reading stats
+    assert b'Total Books</span>\n                            <span class="badge bg-primary rounded-pill">2</span>' in response.data
+    assert b'Total Pages Read</span>\n                            <span class="badge bg-secondary rounded-pill">500</span>' in response.data
+    
+    # Check author stats
+    assert b'Author 1' in response.data
+    assert b'Most Read Author</span>\n                            <span class="badge bg-secondary">Author 1</span>' in response.data
+    
+    # Check publisher stats
+    assert b'Most Read Publisher</span>\n                            <span class="badge bg-secondary">Publisher A</span>' in response.data
+    assert b'[TEST] Book 2 (300 pages)' in response.data
 
-        # Login via POST request with CSRF token
-        response = client.post('/login', data={
-            'username': 'test_user2',
-            'password': 'password123',
-            'csrf_token': csrf_token
-        }, follow_redirects=True)
-
-        # Verify login was successful
-        assert response.status_code == 200
-        assert b'Welcome back' in response.data
-
-        # Test basic stats
-        response = client.get('/stats/')
-        assert response.status_code == 200
-        assert b'<span>Total Books</span>' in response.data
-        assert b'<span class="badge bg-primary rounded-pill">2</span>' in response.data
-        assert b'<span>Books Read This Year</span>' in response.data
-        assert b'<span class="badge bg-success rounded-pill">1</span>' in response.data
-        assert b'<span>Total Pages Read</span>' in response.data
-        assert b'<span class="badge bg-secondary rounded-pill">500</span>' in response.data
-
-        # Test author stats
-        assert b'<span>Most Read Author</span>' in response.data
-        assert b'<span class="badge bg-secondary">Author 1</span>' in response.data
-
-def test_dashboard_categories(client, db_session, app):
+def test_dashboard_categories(auth_client, db_session):
     """Test category statistics"""
-    # Create test user
-    test_user = User(
-        id=3,
-        username='test_user3',
-        email='test3@example.com',
-        password=generate_password_hash('password123')
-    )
-    db_session.add(test_user)
-    db_session.commit()
+    # Get the test user
+    user = User.query.filter_by(username='testuser').first()
     
     # Create test books with categories
     books = [
@@ -133,7 +74,7 @@ def test_dashboard_categories(client, db_session, app):
             google_books_id='cat1',
             categories='Fiction, Fantasy',
             status='read',
-            user_id=3
+            user_id=user.id
         ),
         Book(
             title='[TEST] Category Book 2',
@@ -141,34 +82,19 @@ def test_dashboard_categories(client, db_session, app):
             google_books_id='cat2',
             categories='Fiction, Science Fiction',
             status='read',
-            user_id=3
+            user_id=user.id
         )
     ]
-    
+
     for book in books:
         db_session.add(book)
     db_session.commit()
 
-    with client:  # This creates a request context
-        # Get CSRF token
-        response = client.get('/login')
-        csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
-
-        # Login via POST request with CSRF token
-        response = client.post('/login', data={
-            'username': 'test_user3',
-            'password': 'password123',
-            'csrf_token': csrf_token
-        }, follow_redirects=True)
-
-        # Verify login was successful
-        assert response.status_code == 200
-        assert b'Welcome back' in response.data
-
-        # Test category stats
-        response = client.get('/stats/')
-        assert response.status_code == 200
-        assert b'Fiction' in response.data
-        assert b'Fantasy' in response.data
-        assert b'Science Fiction' in response.data
+    response = auth_client.get('/stats/')
+    assert response.status_code == 200
+    
+    # Check category stats
+    assert b'Fiction (2)' in response.data
+    assert b'Fantasy (1)' in response.data
+    assert b'Science Fiction (1)' in response.data
   
