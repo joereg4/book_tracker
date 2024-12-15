@@ -1,20 +1,27 @@
 import pytest
-from app import app as flask_app, limiter, csrf
+from app import create_app
 from models import db
+import os
 
 @pytest.fixture(scope='session')
 def app():
     """Create test application"""
-    flask_app.config['TESTING'] = True
-    flask_app.config['WTF_CSRF_ENABLED'] = True
-    flask_app.config['RATELIMIT_ENABLED'] = False
-    flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    # Create a new app instance for testing with explicit config
+    test_app = create_app('config.TestConfig')
     
-    with flask_app.app_context():
+    # Additional safety check
+    if not test_app.config['SQLALCHEMY_DATABASE_URI'].endswith(':memory:'):
+        raise RuntimeError(
+            "CRITICAL SAFETY ERROR: Tests must use in-memory database! "
+            "Current URI: " + test_app.config['SQLALCHEMY_DATABASE_URI']
+        )
+    
+    # Create tables in test database
+    with test_app.app_context():
         db.drop_all()
         db.create_all()
         
-    return flask_app
+    return test_app
 
 @pytest.fixture(scope='session')
 def client(app):
@@ -23,6 +30,10 @@ def client(app):
 @pytest.fixture(scope='function')
 def db_session(app):
     """Create a new database session for a test"""
+    # Additional safety check
+    if not app.config['SQLALCHEMY_DATABASE_URI'].endswith(':memory:'):
+        raise RuntimeError("SAFETY ERROR: Tests attempting to use non-memory database!")
+        
     with app.app_context():
         db.drop_all()
         db.create_all()

@@ -24,6 +24,8 @@ class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = True
-    SECRET_KEY = 'test_secret_key'
+    SECRET_KEY = 'test-secret-key-not-for-production'
+    WTF_CSRF_SECRET_KEY = 'test-csrf-secret-key-not-for-production'
     RATELIMIT_ENABLED = True
-    RATELIMIT_STORAGE_URL = "memory://" 
+    RATELIMIT_STORAGE_URL = "memory://"
+    ENV = 'testing'

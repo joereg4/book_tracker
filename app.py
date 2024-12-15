@@ -1,10 +1,11 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, abort
 from datetime import datetime, UTC
 from extensions import (
     db, login_manager, csrf, limiter,
     mail, migrate
 )
 import os
+import importlib
 
 def create_app(config_object=None):
     # Create Flask app with explicit instance path
@@ -15,14 +16,29 @@ def create_app(config_object=None):
     if not os.path.exists(instance_path):
         os.makedirs(instance_path)
 
-    # Configure the app
-    if config_object:
+    # Configure the app - TESTING flag takes precedence to protect production DB
+    if app.testing or (config_object and hasattr(config_object, 'TESTING') and config_object.TESTING):
+        app.config.update({
+            'TESTING': True,
+            'WTF_CSRF_ENABLED': True,
+            'RATELIMIT_ENABLED': False,
+            'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+            'ENV': 'testing'
+        })
+    elif isinstance(config_object, str):
+        # Load config from string (e.g., 'config.TestConfig')
+        module_name, class_name = config_object.rsplit('.', 1)
+        module = importlib.import_module(module_name)
+        config_class = getattr(module, class_name)
+        app.config.from_object(config_class)
+    elif config_object:
         app.config.from_object(config_object)
-    elif os.environ.get('FLASK_TESTING'):
-        app.config.from_object('config.TestConfig')
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # Force in-memory database for tests
     else:
         app.config.from_object('config.Config')
+
+    # SAFETY CHECK: If we're running tests but somehow not using in-memory database, abort
+    if os.environ.get('PYTEST_CURRENT_TEST') and app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite:///:memory:':
+        abort(500, "SAFETY VIOLATION: Attempting to run tests with production database!")
 
     # Initialize extensions
     login_manager.init_app(app)
@@ -73,7 +89,8 @@ def create_app(config_object=None):
 
     return app
 
-app = create_app()
+# Only create the app if not being imported for testing
+app = create_app() if not os.environ.get('PYTEST_CURRENT_TEST') else None
 
 if __name__ == '__main__':
     # Run the app in debug mode if running directly
