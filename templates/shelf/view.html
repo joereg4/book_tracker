@@ -67,6 +67,7 @@
                             <h5 class="text-muted">{{ book.authors }}</h5>
                         </div>
                         <form action="{{ url_for('books.update_status', book_id=book.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                 <option value="to_read" {% if book.status == 'to_read' %}selected{% endif %}>To Read</option>
                                 <option value="reading" {% if book.status == 'reading' %}selected{% endif %}>Reading</option>
