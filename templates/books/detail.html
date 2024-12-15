@@ -27,6 +27,15 @@
                                 <!-- Show library status and actions for books in our DB -->
                                 <div class="mb-3">
                                     <span class="badge bg-primary">{{ current_shelf|replace('_', ' ')|title }}</span>
+                                    <form action="{{ url_for('books.update_status', book_id=book.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <select name="status" class="form-select form-select-sm d-inline-block w-auto me-2">
+                                            <option value="to_read" {% if current_shelf == 'to_read' %}selected{% endif %}>To Read</option>
+                                            <option value="reading" {% if current_shelf == 'reading' %}selected{% endif %}>Currently Reading</option>
+                                            <option value="read" {% if current_shelf == 'read' %}selected{% endif %}>Read</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+                                    </form>
                                     <a href="{{ url_for('books.edit', book_id=book.id) }}" 
                                        class="btn btn-outline-primary btn-sm">
                                         Edit
@@ -35,9 +44,14 @@
                             {% else %}
                                 <!-- Show add to library button for Google Books results -->
                                 <form action="{{ url_for('books.add') }}" method="POST" class="mb-3">
-                                    <!-- Add all the hidden fields needed for book creation -->
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="id" value="{{ book.id }}">
-                                    <!-- ... other fields ... -->
+                                    <input type="hidden" name="title" value="{{ book.title }}">
+                                    <input type="hidden" name="authors" value="{{ book.authors }}">
+                                    <input type="hidden" name="published_date" value="{{ book.published_date }}">
+                                    <input type="hidden" name="description" value="{{ book.description }}">
+                                    <input type="hidden" name="page_count" value="{{ book.page_count }}">
+                                    <input type="hidden" name="thumbnail" value="{{ book.thumbnail }}">
                                     <select name="status" class="form-select form-select-sm d-inline-block w-auto me-2">
                                         <option value="to_read">To Read</option>
                                         <option value="reading">Currently Reading</option>

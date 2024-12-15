@@ -5,7 +5,12 @@ import os
 def backup_database():
     """Create a timestamped backup of the books database"""
     # Source database
-    source = "books.db"
+    instance_dir = "instance"
+    source = os.path.join(instance_dir, "books.db")
+    
+    if not os.path.exists(source):
+        print(f"Error: Source database not found at {source}")
+        return
     
     # Create backup filename with timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -21,6 +26,17 @@ def backup_database():
     try:
         shutil.copy2(source, backup_path)
         print(f"Database backup created successfully: {backup_path}")
+        
+        # List all backups and their sizes
+        backups = sorted(
+            [f for f in os.listdir(backup_dir) if f.startswith("books_backup_")],
+            reverse=True
+        )
+        print("\nExisting backups:")
+        for backup in backups:
+            size_mb = os.path.getsize(os.path.join(backup_dir, backup)) / (1024 * 1024)
+            print(f"{backup}: {size_mb:.2f} MB")
+            
     except Exception as e:
         print(f"Error creating backup: {str(e)}")
 

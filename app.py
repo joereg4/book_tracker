@@ -1,51 +1,97 @@
-from flask import Flask
-from routes.books import bp as books_bp
-from routes.stats import bp as stats_bp
-from routes.shelf import bp as shelf_bp
-from routes.main import bp as main_bp
-from routes.auth import bp as auth_bp 
-from routes.profile import bp as profile_bp
-from flask_login import LoginManager
-from models import User
-from helper import create_session, init_db
-from flask_migrate import Migrate
+from flask import Flask, jsonify, abort
+from datetime import datetime, UTC
+from extensions import (
+    db, login_manager, csrf, limiter,
+    mail, migrate
+)
 import os
-from datetime import timedelta
-from flask_login import login_user
+import importlib
 
-# Initialize Flask app
-app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key')
+def create_app(config_object=None):
+    # Create Flask app with explicit instance path
+    instance_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance')
+    app = Flask(__name__, instance_path=instance_path)
+    
+    # Ensure instance folder exists
+    if not os.path.exists(instance_path):
+        os.makedirs(instance_path)
 
-# Configure session handling
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+    # Configure the app - TESTING flag takes precedence to protect production DB
+    if app.testing or (config_object and hasattr(config_object, 'TESTING') and config_object.TESTING):
+        app.config.update({
+            'TESTING': True,
+            'WTF_CSRF_ENABLED': True,
+            'RATELIMIT_ENABLED': False,
+            'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+            'ENV': 'testing'
+        })
+    elif isinstance(config_object, str):
+        # Load config from string (e.g., 'config.TestConfig')
+        module_name, class_name = config_object.rsplit('.', 1)
+        module = importlib.import_module(module_name)
+        config_class = getattr(module, class_name)
+        app.config.from_object(config_class)
+    elif config_object:
+        app.config.from_object(config_object)
+    else:
+        app.config.from_object('config.Config')
 
-# Initialize database and migrations
-engine = init_db(app)
+    # SAFETY CHECK: If we're running tests but somehow not using in-memory database, abort
+    if os.environ.get('PYTEST_CURRENT_TEST') and app.config['SQLALCHEMY_DATABASE_URI'] != 'sqlite:///:memory:':
+        abort(500, "SAFETY VIOLATION: Attempting to run tests with production database!")
 
-# Register blueprints
-app.register_blueprint(main_bp)
-app.register_blueprint(books_bp)
-app.register_blueprint(stats_bp)
-app.register_blueprint(shelf_bp)
-app.register_blueprint(auth_bp)
-app.register_blueprint(profile_bp)
+    # Initialize extensions
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
 
-# Add max and min functions to Jinja environment
-app.jinja_env.globals.update(max=max, min=min)
+    csrf.init_app(app)
+    limiter.init_app(app)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    mail.init_app(app)
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'auth.login'
+    # Import models after extensions are initialized
+    from models import User
 
-@login_manager.user_loader
-def load_user(user_id):
-    db = create_session()
-    try:
-        return db.get(User, int(user_id))
-    finally:
-        db.close()
+    @login_manager.user_loader
+    def load_user(user_id):
+        user = db.session.get(User, int(user_id))
+        if user:
+            user.last_seen = datetime.now(UTC)
+            db.session.commit()
+        return user
+
+    # Apply rate limits to specific routes
+    @limiter.limit("5 per minute")
+    @app.route("/login-limit-check")
+    def login_limit():
+        return jsonify({"status": "ok"})
+
+    @limiter.limit("30 per minute")
+    @app.route("/books/search-limit-check")
+    def search_limit():
+        return jsonify({"status": "ok"})
+
+    # Import and register blueprints
+    from routes.auth import bp as auth_bp
+    from routes.books import bp as books_bp
+    from routes.main import bp as main_bp
+    from routes.profile import bp as profile_bp
+    from routes.shelf import bp as shelf_bp
+    from routes.stats import bp as stats_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(books_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(profile_bp)
+    app.register_blueprint(shelf_bp)
+    app.register_blueprint(stats_bp)
+
+    return app
+
+# Only create the app if not being imported for testing
+app = create_app() if not os.environ.get('PYTEST_CURRENT_TEST') else None
 
 if __name__ == '__main__':
+    # Run the app in debug mode if running directly
     app.run(debug=True)
