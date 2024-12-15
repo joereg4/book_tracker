@@ -145,3 +145,206 @@ def test_book_detail(client, db_session, app):
         assert response.status_code == 200
         assert b'[TEST] Book Detail View Test' in response.data
         assert b'Test Author' in response.data
+
+def test_update_status_without_csrf(client, db_session, app):
+    """Test updating a book's status without CSRF token should fail"""
+    with app.test_request_context():
+        # Create and login test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Create test book
+        book = Book(
+            title='[TEST] CSRF Test Book',
+            authors='Test Author',
+            google_books_id='test123',
+            status='to_read',
+            user_id=user.id
+        )
+        db_session.add(book)
+        db_session.commit()
+
+        with client:
+            # Login user
+            response = client.get('/login')
+            csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+            client.post('/login', data={
+                'username': 'testuser',
+                'password': 'testpass',
+                'csrf_token': csrf_token
+            }, follow_redirects=True)
+
+            # Try to update status without CSRF token
+            response = client.post(f'/books/update_status/{book.id}', data={
+                'status': 'read'
+            })
+            assert response.status_code == 400  # Should fail with Bad Request
+            
+            # Verify book status hasn't changed
+            db_session.expire_all()
+            book = db_session.get(Book, book.id)
+            assert book.status == 'to_read'
+
+def test_update_status_with_invalid_csrf(client, db_session, app):
+    """Test updating a book's status with invalid CSRF token should fail"""
+    with app.test_request_context():
+        # Create and login test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Create test book
+        book = Book(
+            title='[TEST] CSRF Test Book',
+            authors='Test Author',
+            google_books_id='test123',
+            status='to_read',
+            user_id=user.id
+        )
+        db_session.add(book)
+        db_session.commit()
+
+        with client:
+            # Login user
+            response = client.get('/login')
+            csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+            client.post('/login', data={
+                'username': 'testuser',
+                'password': 'testpass',
+                'csrf_token': csrf_token
+            }, follow_redirects=True)
+
+            # Try to update status with invalid CSRF token
+            response = client.post(f'/books/update_status/{book.id}', data={
+                'status': 'read',
+                'csrf_token': 'invalid_token'
+            })
+            assert response.status_code == 400  # Should fail with Bad Request
+            
+            # Verify book status hasn't changed
+            db_session.expire_all()
+            book = db_session.get(Book, book.id)
+            assert book.status == 'to_read'
+
+def test_update_status_all_transitions(client, db_session, app):
+    """Test all possible status transitions with proper CSRF tokens"""
+    with app.test_request_context():
+        # Create and login test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Create test book
+        book = Book(
+            title='[TEST] Status Transition Test Book',
+            authors='Test Author',
+            google_books_id='test123',
+            status='to_read',
+            user_id=user.id
+        )
+        db_session.add(book)
+        db_session.commit()
+
+        with client:
+            # Login user
+            response = client.get('/login')
+            csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+            client.post('/login', data={
+                'username': 'testuser',
+                'password': 'testpass',
+                'csrf_token': csrf_token
+            }, follow_redirects=True)
+
+            # Test all status transitions
+            transitions = [
+                ('to_read', 'reading'),
+                ('reading', 'read'),
+                ('read', 'to_read'),
+                ('to_read', 'read'),
+                ('read', 'reading')
+            ]
+
+            for old_status, new_status in transitions:
+                # Get fresh CSRF token for each request
+                response = client.get(f'/books/book/{book.id}')
+                csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+
+                # Update status
+                response = client.post(f'/books/update_status/{book.id}', data={
+                    'status': new_status,
+                    'csrf_token': csrf_token
+                }, follow_redirects=True)
+                assert response.status_code == 200
+
+                # Verify status changed
+                db_session.expire_all()
+                book = db_session.get(Book, book.id)
+                assert book.status == new_status
+
+                # Verify date_read is set only when status is 'read'
+                if new_status == 'read':
+                    assert book.date_read is not None
+                elif old_status == 'read' and new_status != 'read':
+                    assert book.date_read is not None  # Date should persist
+
+def test_update_status_remove_book(client, db_session, app):
+    """Test removing a book through status update"""
+    with app.test_request_context():
+        # Create and login test user
+        user = User(
+            username='testuser',
+            email='test@example.com',
+            password=generate_password_hash('testpass')
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # Create test book
+        book = Book(
+            title='[TEST] Remove Book Test',
+            authors='Test Author',
+            google_books_id='test123',
+            status='to_read',
+            user_id=user.id
+        )
+        db_session.add(book)
+        db_session.commit()
+        book_id = book.id
+
+        with client:
+            # Login user
+            response = client.get('/login')
+            csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+            client.post('/login', data={
+                'username': 'testuser',
+                'password': 'testpass',
+                'csrf_token': csrf_token
+            }, follow_redirects=True)
+
+            # Get fresh CSRF token
+            response = client.get(f'/books/book/{book.id}')
+            csrf_token = response.data.decode().split('name="csrf_token" value="')[1].split('"')[0]
+
+            # Remove book
+            response = client.post(f'/books/update_status/{book.id}', data={
+                'status': 'remove',
+                'csrf_token': csrf_token
+            }, follow_redirects=True)
+            assert response.status_code == 200
+
+            # Verify book was deleted
+            book = db_session.get(Book, book_id)
+            assert book is None
