@@ -1,13 +1,28 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import secrets
 from models import User
 from extensions import db, limiter
 from utils.email import send_password_reset_email
+from routes.monitoring import record_rate_limit_hit, redis_client, DummyRedis
 
 bp = Blueprint('auth', __name__)
+
+def check_login_rate_limit(ip_address):
+    """Check if IP has exceeded login rate limit"""
+    try:
+        if isinstance(redis_client, DummyRedis):
+            return False
+        
+        now = datetime.now(UTC)
+        minute_key = f"login_attempts:{ip_address}:{now.strftime('%Y-%m-%d:%H:%M')}"
+        
+        attempts = int(redis_client.get(minute_key) or 0)
+        return attempts >= 5  # Return True if limit exceeded
+    except:
+        return False  # Don't block on Redis errors
 
 @bp.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -52,6 +67,7 @@ def signup():
     return render_template('auth/signup.html')
 
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=['POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
@@ -63,10 +79,11 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         if not user or not check_password_hash(user.password, password):
-            # Apply rate limit only for failed login attempts
-            if current_app.config.get('TEST_RATE_LIMIT', False):
-                limiter.limit("5 per minute")(lambda: None)()
-
+            try:
+                record_rate_limit_hit('login', request.remote_addr)
+            except:
+                pass  # Don't fail the request if Redis is unavailable
+            
             flash('Invalid username or password', 'error')
             # Return 400 for invalid credentials and ensure user is logged out
             if current_user.is_authenticated:

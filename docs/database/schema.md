@@ -183,7 +183,7 @@ results = Book.query.join(
 
 ### Updating Status
 ```python
-book = Book.query.get(book_id)
+book = db.session.get(Book, book_id)
 book.status = "read"
 book.date_read = datetime.now()
 db.session.commit()

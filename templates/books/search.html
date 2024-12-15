@@ -10,7 +10,11 @@
     </div>
 </form>
 
-{% if results %}
+{% if query and not results %}
+    <div class="alert alert-info">
+        No books found matching your search.
+    </div>
+{% elif results %}
     <div class="mb-3">
         {% set start = (page - 1) * results_per_page + 1 %}
         {% set end = start + results_per_page - 1 %}

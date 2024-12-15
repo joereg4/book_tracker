@@ -105,7 +105,19 @@ flask db upgrade
 python rebuild_fts_search.py  # Initialize full-text search
 ```
 
-3. Run the application:
+3. Set up admin user:
+```bash
+# Make an existing user an admin
+flask users make-admin <username>
+
+# List all admin users
+flask users list-admins
+
+# Remove admin privileges
+flask users remove-admin <username>
+```
+
+4. Run the application:
 ```bash
 python app.py
 ```

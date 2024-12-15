@@ -6,6 +6,7 @@ from extensions import (
 )
 import os
 import importlib
+import click
 
 def create_app(config_object=None):
     # Create Flask app with explicit instance path
@@ -79,6 +80,7 @@ def create_app(config_object=None):
     from routes.profile import bp as profile_bp
     from routes.shelf import bp as shelf_bp
     from routes.stats import bp as stats_bp
+    from routes.monitoring import bp as monitoring_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(books_bp)
@@ -86,6 +88,53 @@ def create_app(config_object=None):
     app.register_blueprint(profile_bp)
     app.register_blueprint(shelf_bp)
     app.register_blueprint(stats_bp)
+    app.register_blueprint(monitoring_bp)
+
+    # Error handlers
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        return "Rate limit exceeded. Please try again later.", 429
+
+    # CLI Commands
+    @app.cli.group()
+    def users():
+        """User management commands."""
+        pass
+
+    @users.command()
+    @click.argument('username')
+    def make_admin(username):
+        """Make a user an admin by username."""
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            click.echo(f'Error: User {username} not found')
+            return
+        user.is_admin = True
+        db.session.commit()
+        click.echo(f'Successfully made {username} an admin')
+
+    @users.command()
+    @click.argument('username')
+    def remove_admin(username):
+        """Remove admin privileges from a user by username."""
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            click.echo(f'Error: User {username} not found')
+            return
+        user.is_admin = False
+        db.session.commit()
+        click.echo(f'Successfully removed admin privileges from {username}')
+
+    @users.command()
+    def list_admins():
+        """List all admin users."""
+        admins = User.query.filter_by(is_admin=True).all()
+        if not admins:
+            click.echo('No admin users found')
+            return
+        click.echo('Admin users:')
+        for admin in admins:
+            click.echo(f'- {admin.username} ({admin.email})')
 
     return app
 

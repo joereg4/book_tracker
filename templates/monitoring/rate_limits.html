@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Rate Limit Monitoring{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Rate Limit Monitoring</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Current Limits</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for endpoint, limit in current_limits.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ endpoint }}
+                            <span class="badge bg-primary rounded-pill">{{ limit }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Today's Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="todayChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hourly Statistics (Last 24 Hours)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Today's stats chart
+const todayCtx = document.getElementById('todayChart').getContext('2d');
+const todayData = {
+    labels: {{ today_hits.keys()|list|tojson }},
+    datasets: [{
+        label: 'Hits per IP',
+        data: {{ today_hits.values()|list|tojson }},
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+    }]
+};
+new Chart(todayCtx, {
+    type: 'bar',
+    data: todayData,
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Hourly stats chart
+const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+const hourlyLabels = {{ hourly_stats.keys()|list|tojson }};
+const hourlyData = {
+    labels: hourlyLabels,
+    datasets: [{
+        label: 'Total Hits',
+        data: hourlyLabels.map(hour => {
+            const hits = {{ hourly_stats|tojson }}[hour] || {};
+            return Object.values(hits).reduce((a, b) => a + parseInt(b), 0);
+        }),
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+    }]
+};
+new Chart(hourlyCtx, {
+    type: 'line',
+    data: hourlyData,
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Auto-refresh every minute
+setInterval(() => {
+    fetch('/monitoring/api/rate-limits')
+        .then(response => response.json())
+        .then(data => {
+            // Update charts with new data
+            todayChart.data.datasets[0].data = Object.values(data.login.today_hits);
+            todayChart.update();
+            
+            const hourlyValues = Object.values(data.login.hourly_stats).map(hour => 
+                Object.values(hour).reduce((a, b) => a + parseInt(b), 0)
+            );
+            hourlyChart.data.datasets[0].data = hourlyValues;
+            hourlyChart.update();
+        });
+}, 60000);
+</script>
+{% endblock %}
+{% endblock %} 
