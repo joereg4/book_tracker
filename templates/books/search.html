@@ -2,7 +2,7 @@
 
 {% block content %}
 <h2>Search Books</h2>
-<form method="GET" class="mb-4">
+<form method="POST" class="mb-4">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="input-group">
         <input type="text" name="query" class="form-control" placeholder="Search for books..." value="{{ query or '' }}">

@@ -45,17 +45,29 @@ def strip_html_tags(text):
 @limiter.limit("30 per minute")
 def search():
     """Search for books using Google Books API"""
-    query = request.form.get('query') or request.args.get('query')
+    if request.method == 'POST':
+        query = request.form.get('query')
+        if query:
+            return redirect(url_for('books.search', query=query))
+    else:
+        query = request.args.get('query')
+    
     page = request.args.get('page', 1, type=int)
     results_per_page = 40
     
     if not query:
-        return render_template('books/search.html', results_per_page=results_per_page)
+        return render_template('books/search.html', 
+                             results_per_page=results_per_page,
+                             max=max,
+                             min=min)
     
     try:
         if not GOOGLE_BOOKS_API_KEY:
             flash('API key not found', 'error')
-            return render_template('books/search.html', results_per_page=results_per_page)
+            return render_template('books/search.html', 
+                                 results_per_page=results_per_page,
+                                 max=max,
+                                 min=min)
         
         # Get existing books from database for comparison
         existing_books = {book.google_books_id: book.status 
@@ -118,11 +130,16 @@ def search():
                              page=page,
                              total_pages=total_pages,
                              total_items=total_items,
-                             results_per_page=results_per_page)
+                             results_per_page=results_per_page,
+                             max=max,
+                             min=min)
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         flash(f'Error searching books: {str(e)}')
-        return render_template('books/search.html', results_per_page=results_per_page)
+        return render_template('books/search.html', 
+                             results_per_page=results_per_page,
+                             max=max,
+                             min=min)
 
 @bp.route('/add', methods=['POST'])
 @login_required
