@@ -60,29 +60,39 @@ def test_csrf_protection_add_book(auth_client, db_session):
     assert response.status_code == 400
     assert b'The CSRF token is missing' in response.data
     
-    # Try with invalid CSRF token
+    # Try with invalid CSRF token (should redirect to login)
     response = auth_client.post('/books/add', data={
         'id': 'test123',
         'title': 'Test Book',
         'authors': 'Test Author',
         'status': 'to_read',
         'csrf_token': 'invalid-token'
-    })
+    }, follow_redirects=True)
     
-    assert response.status_code == 400
-    assert b'The CSRF session token is missing' in response.data
-    
-    # Get valid CSRF token from profile page (not rate limited)
+    assert response.status_code == 200
+    assert b'login' in response.data.lower()
+    assert b'Your session has expired' in response.data
+
+def test_csrf_error_handling(auth_client, db_session):
+    """Test CSRF error handling redirects to login with proper message"""
+    # First get a valid token
     response = auth_client.get('/profile')
     csrf_token = get_csrf_token(response)
     
-    # Try with valid CSRF token
+    # Clear the session to simulate expiration
+    with auth_client.session_transaction() as session:
+        session.clear()
+    
+    # Try to add a book with the now-expired session
     response = auth_client.post('/books/add', data={
         'id': 'test123',
         'title': 'Test Book',
         'authors': 'Test Author',
         'status': 'to_read',
         'csrf_token': csrf_token
-    })
+    }, follow_redirects=True)
     
-    assert response.status_code == 302  # Redirect after successful addition
+    # Should be redirected to login page with proper message
+    assert response.status_code == 200
+    assert b'login' in response.data.lower()
+    assert b'Your session has expired' in response.data

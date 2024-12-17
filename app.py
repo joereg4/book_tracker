@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, abort
+from flask import Flask, jsonify, abort, flash, redirect, url_for
 from datetime import datetime, UTC
 from extensions import (
     db, login_manager, csrf, limiter,
@@ -96,6 +96,15 @@ def create_app(config_object=None):
     @app.errorhandler(429)
     def ratelimit_handler(e):
         return "Rate limit exceeded. Please try again later.", 429
+
+    # CSRF error handler
+    @app.errorhandler(400)
+    def handle_csrf_error(e):
+        error_msg = str(e)
+        if 'The CSRF session token has expired.' in error_msg or 'The CSRF session token is missing.' in error_msg:
+            flash('Your session has expired. Please log in again to continue.', 'warning')
+            return redirect(url_for('auth.login'))
+        return e
 
     # CLI Commands
     @app.cli.group()
