@@ -190,10 +190,16 @@
 1. **Export Options**
    - Export to CSV
    - Export to JSON
-   - Backup library
+   - Database backups (automated daily)
    - Print reports
 
-2. **Privacy Controls**
+2. **Backup Features**
+   - Automatic daily backups
+   - Compressed backup files
+   - 7-day retention policy
+   - Safety backups during restore
+
+3. **Privacy Controls**
    - Public profile options
    - Reading privacy
    - Data sharing
