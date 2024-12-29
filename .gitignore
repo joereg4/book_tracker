@@ -57,3 +57,59 @@ Thumbs.db
 backups/
 *.sql
 *.sql.gz
+
+# Deployment
+*.sock
+*.pid
+*.socket
+gunicorn.conf.py
+supervisor.conf
+deploy_key
+deploy_key.pub
+
+# Logs
+logs/
+*.log
+log/
+/var/log/
+
+# SSL/TLS
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+*.der
+/etc/letsencrypt/
+
+# Server configs
+/etc/nginx/
+/etc/supervisor/
+/etc/systemd/
+nginx.conf
+supervisor.conf
+systemd.service
+
+# Local development vs production
+.production
+.staging
+.development
+
+# Application specific
+instance/books.db*
+instance/search.db
+instance/whoosh_index/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+.tox/
+.nox/
+
+# Temporary files
+*.swp
+*.swo
+*~
+*.bak
+.DS_Store
+Thumbs.db

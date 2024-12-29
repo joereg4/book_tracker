@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center g-5 py-5">
+        <div class="col-lg-6">
+            <h1 class="display-5 fw-bold mb-3">Track Your Reading Journey</h1>
+            <p class="lead mb-4">
+                Organize your books, track your reading progress, and discover new titles with our elegant and intuitive book tracking platform.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-lg px-4 me-md-2">Get Started</a>
+                <a href="#features" class="btn btn-outline-secondary btn-lg px-4">Learn More</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center mb-0">Login</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="text-end mt-1">
+                                <a href="{{ url_for('auth.forgot_password') }}" class="text-muted small">Forgot Password?</a>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+        <div class="col d-flex align-items-start">
+            <div class="feature-icon bg-primary bg-gradient p-2 rounded-3 me-3">
+                <i class="bi bi-search text-white"></i>
+            </div>
+            <div>
+                <h3 class="fw-bold mb-0">Powerful Search</h3>
+                <p>Search millions of books instantly with our Google Books integration. Find exactly what you're looking for with advanced filters.</p>
+                <img src="{{ url_for('static', filename='images/search.png') }}" class="img-fluid rounded shadow-sm" alt="Search Interface">
+            </div>
+        </div>
+        <div class="col d-flex align-items-start">
+            <div class="feature-icon bg-primary bg-gradient p-2 rounded-3 me-3">
+                <i class="bi bi-book text-white"></i>
+            </div>
+            <div>
+                <h3 class="fw-bold mb-0">Smart Organization</h3>
+                <p>Keep your books organized with customizable shelves. Track your reading progress and manage your library effortlessly.</p>
+                <img src="{{ url_for('static', filename='images/book-management.png') }}" class="img-fluid rounded shadow-sm" alt="Book Management">
+            </div>
+        </div>
+        <div class="col d-flex align-items-start">
+            <div class="feature-icon bg-primary bg-gradient p-2 rounded-3 me-3">
+                <i class="bi bi-graph-up text-white"></i>
+            </div>
+            <div>
+                <h3 class="fw-bold mb-0">Insightful Statistics</h3>
+                <p>Track your reading habits with beautiful visualizations. Set goals and monitor your progress over time.</p>
+                <img src="{{ url_for('static', filename='images/dashboard.png') }}" class="img-fluid rounded shadow-sm" alt="Dashboard">
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Features -->
+    <div class="row g-5 py-5">
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-4">Rich Book Details</h2>
+            <p>Get comprehensive information about each book, including:</p>
+            <ul class="list-unstyled">
+                <li><i class="bi bi-check2-circle text-success me-2"></i>Cover images and metadata</li>
+                <li><i class="bi bi-check2-circle text-success me-2"></i>Reading progress tracking</li>
+                <li><i class="bi bi-check2-circle text-success me-2"></i>Personal notes and ratings</li>
+                <li><i class="bi bi-check2-circle text-success me-2"></i>Reading history</li>
+            </ul>
+            <img src="{{ url_for('static', filename='images/book-detail.png') }}" class="img-fluid rounded shadow-sm" alt="Book Details">
+        </div>
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-4">Why Choose Our Platform?</h2>
+            <div class="accordion" id="whyChooseUs">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#privacy">
+                            Privacy Focused
+                        </button>
+                    </h2>
+                    <div id="privacy" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            Your reading data is private and secure. We never share your personal information.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#backup">
+                            Regular Backups
+                        </button>
+                    </h2>
+                    <div id="backup" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            Your library is automatically backed up daily, ensuring your data is always safe.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#export">
+                            Data Portability
+                        </button>
+                    </h2>
+                    <div id="export" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            Export your library anytime in CSV or JSON format. Your data belongs to you.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -6,30 +6,15 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    """Show dashboard view"""
     if not current_user.is_authenticated:
-        # Show empty dashboard for non-authenticated users
-        return render_template('main/home.html', 
-                             to_read=[],
-                             reading=[],
-                             read=[])
+        return render_template('landing.html')
+        
+    # Get user's books for different shelves
+    to_read = Book.query.filter_by(user_id=current_user.id, status='to_read').all()
+    reading = Book.query.filter_by(user_id=current_user.id, status='reading').all()
+    read = Book.query.filter_by(user_id=current_user.id, status='read').all()
     
-    to_read = Book.query.filter_by(
-        status='to_read',
-        user_id=current_user.id
-    ).order_by(Book.created_at.desc()).all()
-    
-    reading = Book.query.filter_by(
-        status='reading',
-        user_id=current_user.id
-    ).order_by(Book.created_at.desc()).all()
-    
-    read = Book.query.filter_by(
-        status='read',
-        user_id=current_user.id
-    ).order_by(Book.date_read.desc().nulls_last()).all()
-    
-    return render_template('main/home.html', 
+    return render_template('main/home.html',
                          to_read=to_read,
                          reading=reading,
                          read=read)
