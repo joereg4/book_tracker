@@ -1,7 +1,5 @@
 # Development Setup Guide
 
-This guide will help you set up your development environment for the Book Tracker application.
-
 ## Prerequisites
 
 - Python 3.8 or higher
@@ -10,6 +8,8 @@ This guide will help you set up your development environment for the Book Tracke
 - PostgreSQL 12 or higher
 - A text editor or IDE (VS Code recommended)
 - Google Books API key
+- Redis (optional, for rate limiting)
+- Gmail account (for email functionality)
 
 ## Initial Setup
 
@@ -32,6 +32,100 @@ source books/bin/activate
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
+```
+
+4. Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
+
+5. Configure your environment variables in `.env`:
+```plaintext
+# Flask configuration
+FLASK_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(16))')
+APP_URL=http://localhost:5000
+FLASK_ENV=development
+FLASK_DEBUG=1
+
+# Database configuration
+DATABASE_URL=postgresql://username@localhost/books
+
+# Google Books API
+GOOGLE_BOOKS_API_KEY=your-google-books-api-key
+
+# Email configuration (Development)
+MAIL_SUPPRESS_SEND=True  # Set to False to actually send emails
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your-email@gmail.com
+MAIL_DEFAULT_SENDER=your-email@gmail.com
+```
+
+6. Initialize the database:
+```bash
+flask db upgrade
+```
+
+## Email Configuration
+
+### Development Mode
+For development, emails are suppressed by default and logged to the console. To test actual email sending:
+
+1. Set `MAIL_SUPPRESS_SEND=False` in your `.env` file
+2. Configure Gmail OAuth2 credentials:
+   - Create a project in Google Cloud Console
+   - Enable Gmail API
+   - Create OAuth2 credentials
+   - Add authorized redirect URIs
+   - Update `.env` with OAuth2 settings:
+     ```plaintext
+     MAIL_USE_OAUTH2=True
+     MAIL_USERNAME=your-email@gmail.com
+     MAIL_DEFAULT_SENDER=your-email@gmail.com
+     MAIL_OAUTH_CLIENT_ID=your-oauth-client-id
+     MAIL_OAUTH_CLIENT_SECRET=your-oauth-client-secret
+     MAIL_OAUTH_REDIRECT_URI=http://localhost:5000/oauth2callback
+     ```
+
+### Testing Email Functionality
+
+1. Run the email test command:
+```bash
+flask email-cli test your-email@example.com
+```
+
+2. Follow the authorization flow:
+   - Click the authorization URL in the console
+   - Sign in with your Gmail account
+   - Grant permissions
+   - Copy the code from the redirect URL
+   - Run: `flask email-cli authorize <code>`
+
+3. The test email should be sent to your specified address
+
+### Production Setup
+For production:
+1. Set `FLASK_ENV=production`
+2. Set `MAIL_SUPPRESS_SEND=False`
+3. Configure OAuth2 with production credentials
+4. Use a production domain for redirect URIs
+
+## Running Tests
+
+1. Run all tests:
+```bash
+pytest
+```
+
+2. Run specific test file:
+```bash
+pytest tests/test_email.py
+```
+
+3. Run with coverage:
+```bash
+pytest --cov=.
 ```
 
 ## PostgreSQL Setup
@@ -88,25 +182,6 @@ This will:
 - Set up full-text search configuration
 - Create necessary indexes
 
-## Running Tests
-
-1. Run all tests:
-```bash
-pytest
-```
-
-2. Run specific test file:
-```bash
-pytest tests/test_books.py
-```
-
-3. Run with coverage:
-```bash
-pytest --cov=.
-```
-
-Note: Tests use SQLite in-memory database for speed and simplicity, while development and production use PostgreSQL.
-
 ## Development Server
 
 1. Start the development server:
@@ -151,37 +226,6 @@ pg_dump books > backup.sql
 ```bash
 psql books < backup.sql
 ```
-
-### Testing Email Functionality
-
-In development, emails are captured and printed to the console by default. To test email functionality:
-
-1. Configure email settings in `.env`:
-```plaintext
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USERNAME=your_email@example.com
-MAIL_PASSWORD=your_email_password_or_app_password
-MAIL_DEFAULT_SENDER=noreply@example.com
-```
-
-2. Test email configuration using CLI:
-```bash
-flask email-cli test recipient@example.com
-```
-
-3. Check console output for the email content in development mode
-
-4. For Gmail users:
-   - Enable 2-factor authentication
-   - Generate an App Password for more security
-   - Use the App Password in MAIL_PASSWORD
-
-5. For production setup:
-   - Set FLASK_ENV=production
-   - Use real SMTP credentials
-   - Test email delivery to actual recipients
 
 ## Code Style
 
