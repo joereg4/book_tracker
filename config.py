@@ -7,7 +7,9 @@ class Config:
     
     # Database config
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'books.db')
+        'postgresql://localhost/books'  # PostgreSQL is required for production
+    if not SQLALCHEMY_DATABASE_URI.startswith('postgresql://'):
+        raise ValueError('Production database must be PostgreSQL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Email config
@@ -34,12 +36,14 @@ class Config:
 class TestConfig(Config):
     TESTING = True
     WTF_CSRF_ENABLED = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # Use SQLite for faster tests
     RATELIMIT_ENABLED = True
     RATELIMIT_STORAGE_URI = 'memory://'  # Use in-memory storage for tests
     RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}  # Consistent decode option
     SERVER_NAME = 'localhost.localdomain'
     SESSION_COOKIE_SECURE = False  # Allow testing without HTTPS
-    RATELIMIT_STORAGE_URI = 'memory://'
-    RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}
     MAIL_SUPPRESS_SEND = True
+    
+    def __init__(self):
+        # Override the PostgreSQL check for tests
+        pass
