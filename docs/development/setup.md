@@ -154,11 +154,34 @@ psql books < backup.sql
 
 ### Testing Email Functionality
 
-In development, emails are captured and printed to the console by default. To test with a real SMTP server:
+In development, emails are captured and printed to the console by default. To test email functionality:
 
-1. Configure email settings in `.env`
-2. Restart the development server
-3. Test password reset or email verification features
+1. Configure email settings in `.env`:
+```plaintext
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your_email@example.com
+MAIL_PASSWORD=your_email_password_or_app_password
+MAIL_DEFAULT_SENDER=noreply@example.com
+```
+
+2. Test email configuration using CLI:
+```bash
+flask email-cli test recipient@example.com
+```
+
+3. Check console output for the email content in development mode
+
+4. For Gmail users:
+   - Enable 2-factor authentication
+   - Generate an App Password for more security
+   - Use the App Password in MAIL_PASSWORD
+
+5. For production setup:
+   - Set FLASK_ENV=production
+   - Use real SMTP credentials
+   - Test email delivery to actual recipients
 
 ## Code Style
 

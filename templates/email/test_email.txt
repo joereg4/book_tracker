@@ -1,0 +1,6 @@
+Hello {{ name }},
+
+This is a test email from the Book Tracker application. If you received this email, it means your email configuration is working correctly.
+
+Best regards,
+Book Tracker Team 

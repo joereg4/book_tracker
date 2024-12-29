@@ -165,3 +165,39 @@ See `backup_restore.md` for detailed procedures on:
    - Failed login attempts
    - System resource usage
    - Application errors 
+
+## Email Configuration
+
+1. **SMTP Setup**:
+   ```bash
+   # Production email settings in .env
+   FLASK_ENV=production
+   MAIL_SERVER=smtp.your-provider.com
+   MAIL_PORT=587
+   MAIL_USE_TLS=True
+   MAIL_USERNAME=your_email
+   MAIL_PASSWORD=your_secure_password
+   MAIL_DEFAULT_SENDER=noreply@your-domain.com
+   ```
+
+2. **Email Testing**:
+   ```bash
+   # Test email configuration
+   flask email-cli test admin@your-domain.com
+   
+   # Check logs for errors
+   sudo journalctl -u book_tracker.service | grep "email"
+   ```
+
+3. **Security Considerations**:
+   - Use environment variables for credentials
+   - Enable TLS/SSL for email
+   - Monitor failed email attempts
+   - Regularly rotate email credentials
+   - Set up email signing (DKIM/SPF)
+
+4. **Monitoring**:
+   - Set up email delivery monitoring
+   - Configure bounce notifications
+   - Track email sending rates
+   - Monitor spam reports 

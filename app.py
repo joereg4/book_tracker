@@ -106,46 +106,12 @@ def create_app(config_object=None):
             return redirect(url_for('auth.login'))
         return e
 
-    # CLI Commands
-    @app.cli.group()
-    def users():
-        """User management commands."""
-        pass
-
-    @users.command()
-    @click.argument('username')
-    def make_admin(username):
-        """Make a user an admin by username."""
-        user = User.query.filter_by(username=username).first()
-        if user is None:
-            click.echo(f'Error: User {username} not found')
-            return
-        user.is_admin = True
-        db.session.commit()
-        click.echo(f'Successfully made {username} an admin')
-
-    @users.command()
-    @click.argument('username')
-    def remove_admin(username):
-        """Remove admin privileges from a user by username."""
-        user = User.query.filter_by(username=username).first()
-        if user is None:
-            click.echo(f'Error: User {username} not found')
-            return
-        user.is_admin = False
-        db.session.commit()
-        click.echo(f'Successfully removed admin privileges from {username}')
-
-    @users.command()
-    def list_admins():
-        """List all admin users."""
-        admins = User.query.filter_by(is_admin=True).all()
-        if not admins:
-            click.echo('No admin users found')
-            return
-        click.echo('Admin users:')
-        for admin in admins:
-            click.echo(f'- {admin.username} ({admin.email})')
+    # Initialize CLI commands
+    from cli.email_commands import init_app as init_email_cli
+    from cli.user_commands import init_app as init_user_cli
+    
+    init_email_cli(app)
+    init_user_cli(app)
 
     return app
 

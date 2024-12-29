@@ -204,4 +204,35 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+# Email Configuration
+
+Email functionality is optional in development (defaults to console output) but required for production. To configure email:
+
+1. Development Setup:
+```bash
+# Configure email in .env
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your_email@example.com
+MAIL_PASSWORD=your_app_password
+MAIL_DEFAULT_SENDER=noreply@example.com
+
+# Test email configuration
+flask email-cli test test@example.com
+```
+
+2. Gmail Setup:
+- Enable 2-factor authentication
+- Generate an App Password
+- Use App Password in MAIL_PASSWORD
+
+3. Production Setup:
+- Set FLASK_ENV=production
+- Configure real SMTP credentials
+- Test email delivery
+- Monitor email logs
+
+See [Email Configuration Guide](docs/development/setup.md#testing-email-functionality) for detailed setup instructions.
 ```
