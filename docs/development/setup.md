@@ -7,7 +7,7 @@ This guide will help you set up your development environment for the Book Tracke
 - Python 3.8 or higher
 - pip (Python package installer)
 - Git
-- SQLite 3
+- PostgreSQL 12 or higher
 - A text editor or IDE (VS Code recommended)
 - Google Books API key
 
@@ -34,6 +34,24 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+## PostgreSQL Setup
+
+1. Install PostgreSQL:
+```bash
+# macOS (using Homebrew)
+brew install postgresql@15
+brew services start postgresql@15
+
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
+```
+
+2. Create database and user:
+```bash
+createdb books
+```
+
 ## Configuration
 
 1. Create `.env` file:
@@ -47,6 +65,9 @@ FLASK_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(16))')
 GOOGLE_BOOKS_API_KEY=your_api_key_here
 FLASK_ENV=development
 FLASK_DEBUG=1
+
+# Database URL (update username and password if needed)
+DATABASE_URL=postgresql://localhost/books
 
 # Optional email settings (defaults to console in development)
 MAIL_SERVER=smtp.gmail.com
@@ -62,10 +83,10 @@ MAIL_PASSWORD=your_password
 flask db upgrade
 ```
 
-2. Set up Full Text Search:
-```bash
-python rebuild_fts_search.py
-```
+This will:
+- Create all tables
+- Set up full-text search configuration
+- Create necessary indexes
 
 ## Running Tests
 
@@ -84,7 +105,7 @@ pytest tests/test_books.py
 pytest --cov=.
 ```
 
-Note: Tests use an in-memory SQLite database and will never affect your development or production database.
+Note: Tests use SQLite in-memory database for speed and simplicity, while development and production use PostgreSQL.
 
 ## Development Server
 
@@ -123,12 +144,12 @@ flask db upgrade
 
 3. Backup database:
 ```bash
-python backup_db.py
+pg_dump books > backup.sql
 ```
 
 4. Restore database:
 ```bash
-python restore_db.py
+psql books < backup.sql
 ```
 
 ### Testing Email Functionality
@@ -172,9 +193,10 @@ git push origin feature-name
 ### Common Issues
 
 1. **Database Errors**
-   - Ensure migrations are up to date
-   - Check database file permissions
-   - Verify SQLite version
+   - Ensure PostgreSQL service is running
+   - Check database connection settings
+   - Verify database user permissions
+   - Run migrations
 
 2. **Email Issues**
    - Check SMTP settings

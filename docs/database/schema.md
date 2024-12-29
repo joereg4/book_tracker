@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Book Tracker application uses SQLite with SQLAlchemy ORM. The database schema includes tables for users, books, and full-text search functionality.
+The Book Tracker application uses PostgreSQL with SQLAlchemy ORM. The database schema includes tables for users, books, and built-in full-text search functionality.
 
 ## Tables
 
@@ -10,23 +10,28 @@ The Book Tracker application uses SQLite with SQLAlchemy ORM. The database schem
 
 ```sql
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username VARCHAR(64) UNIQUE NOT NULL,
     email VARCHAR(120) UNIQUE NOT NULL,
-    password_hash VARCHAR(128) NOT NULL,
-    created_at DATETIME NOT NULL,
-    last_seen DATETIME,
+    password VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    last_seen TIMESTAMP WITH TIME ZONE,
     reset_token VARCHAR(100),
-    reset_token_expiry DATETIME
+    reset_token_expiry TIMESTAMP WITH TIME ZONE
 );
+
+CREATE UNIQUE INDEX ix_users_email ON users (email);
+CREATE UNIQUE INDEX ix_users_username ON users (username);
 ```
 
 Fields:
-- `id`: Unique identifier
+- `id`: Unique identifier (auto-incrementing)
 - `username`: User's display name
 - `email`: User's email address (used for login and notifications)
-- `password_hash`: Hashed password using Werkzeug's security functions
+- `password`: Hashed password using Werkzeug's security functions
 - `created_at`: Account creation timestamp
+- `is_admin`: Boolean flag for admin privileges
 - `last_seen`: Last activity timestamp
 - `reset_token`: Password reset token
 - `reset_token_expiry`: Reset token expiration timestamp
@@ -35,60 +40,83 @@ Fields:
 
 ```sql
 CREATE TABLE books (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
-    authors VARCHAR(200),
-    google_books_id VARCHAR(20),
-    isbn_10 VARCHAR(10),
-    isbn_13 VARCHAR(13),
-    publication_date DATE,
-    page_count INTEGER,
-    thumbnail_url VARCHAR(300),
-    description TEXT,
-    categories VARCHAR(200),
+    authors VARCHAR(200) NOT NULL,
+    isbn VARCHAR(13),
+    isbn13 VARCHAR(13),
+    published_date VARCHAR(10),
     status VARCHAR(20) NOT NULL,
-    created_at DATETIME NOT NULL,
-    date_read DATETIME,
-    user_id INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    date_read TIMESTAMP WITH TIME ZONE,
+    google_books_id VARCHAR(20),
+    etag VARCHAR(50),
+    self_link VARCHAR(250),
+    publisher VARCHAR(100),
+    description TEXT,
+    page_count INTEGER,
+    print_type VARCHAR(20),
+    categories VARCHAR(100),
+    maturity_rating VARCHAR(20),
+    language VARCHAR(10),
+    preview_link VARCHAR(250),
+    info_link VARCHAR(250),
+    canonical_volume_link VARCHAR(250),
+    small_thumbnail VARCHAR(250),
+    thumbnail VARCHAR(250),
+    content_version VARCHAR(20),
+    is_ebook BOOLEAN,
+    search_vector tsvector GENERATED ALWAYS AS (
+        setweight(to_tsvector('books_fts_config', coalesce(title, '')), 'A') ||
+        setweight(to_tsvector('books_fts_config', coalesce(authors, '')), 'B') ||
+        setweight(to_tsvector('books_fts_config', coalesce(description, '')), 'C') ||
+        setweight(to_tsvector('books_fts_config', coalesce(categories, '')), 'D')
+    ) STORED
 );
+
+CREATE INDEX books_search_idx ON books USING GIN (search_vector);
 ```
 
 Fields:
-- `id`: Unique identifier
+- `id`: Unique identifier (auto-incrementing)
+- `user_id`: Foreign key to users table
 - `title`: Book title
-- `authors`: Comma-separated list of authors
-- `google_books_id`: Google Books API identifier
-- `isbn_10`: ISBN-10 number
-- `isbn_13`: ISBN-13 number
-- `publication_date`: Book publication date
-- `page_count`: Number of pages
-- `thumbnail_url`: URL to book cover image
-- `description`: Book description
-- `categories`: Comma-separated list of categories
+- `authors`: Book authors
+- `isbn`: ISBN-10 number
+- `isbn13`: ISBN-13 number
+- `published_date`: Book publication date
 - `status`: Reading status (to_read, reading, read)
 - `created_at`: When book was added to library
 - `date_read`: When book was marked as read
-- `user_id`: Foreign key to users table
+- Additional fields from Google Books API
+- `search_vector`: Generated column for full-text search
 
-### Full Text Search
+## Full Text Search
 
+The application uses PostgreSQL's built-in full-text search capabilities:
+
+1. **Configuration**: Custom text search configuration with unaccent support
 ```sql
-CREATE VIRTUAL TABLE books_fts USING fts5(
-    title,
-    authors,
-    description,
-    categories,
-    content='books',
-    content_rowid='id'
-);
+CREATE TEXT SEARCH CONFIGURATION books_fts_config (COPY = english);
+ALTER TEXT SEARCH CONFIGURATION books_fts_config
+    ALTER MAPPING FOR hword, hword_part, word
+    WITH unaccent, english_stem;
 ```
 
-Fields indexed for search:
-- `title`: Book title
-- `authors`: Book authors
-- `description`: Book description
-- `categories`: Book categories
+2. **Search Vector**: Generated column combining multiple fields with different weights
+- Title (weight A)
+- Authors (weight B)
+- Description (weight C)
+- Categories (weight D)
+
+3. **Search Example**:
+```sql
+SELECT *
+FROM books
+WHERE search_vector @@ plainto_tsquery('books_fts_config', 'search terms')
+ORDER BY ts_rank(search_vector, plainto_tsquery('books_fts_config', 'search terms')) DESC;
+```
 
 ## Relationships
 
@@ -96,44 +124,17 @@ Fields indexed for search:
 - User → Books: One user can have many books
 - Books are automatically deleted when user is deleted (CASCADE)
 
-## Indexes
-
-```sql
-CREATE INDEX ix_books_user_id ON books (user_id);
-CREATE INDEX ix_books_status ON books (status);
-CREATE INDEX ix_books_google_books_id ON books (google_books_id);
-CREATE UNIQUE INDEX ix_users_email ON users (email);
-CREATE UNIQUE INDEX ix_users_username ON users (username);
-```
-
-## Full Text Search
-
-The application uses SQLite's FTS5 module for full-text search capabilities:
-
-1. **Triggers**: Automatically keep FTS index in sync with books table
-2. **Search**: Uses SQLite's match operator for efficient text search
-3. **Ranking**: Results ordered by relevance using bm25 algorithm
-
-### Search Example
-```sql
-SELECT books.*
-FROM books
-JOIN books_fts ON books.id = books_fts.rowid
-WHERE books_fts MATCH 'python programming'
-ORDER BY rank;
-```
-
 ## Database Management
 
 ### Backup
-- Automatic backups created by `backup_db.py`
-- Backups stored in `backups/` directory
-- Filename format: `books_backup_YYYYMMDD_HHMMSS.db`
+```bash
+pg_dump books > backup.sql
+```
 
 ### Restore
-- Use `restore_db.py` to restore from backup
-- Creates safety backup before restore
-- Verifies database integrity after restore
+```bash
+psql books < backup.sql
+```
 
 ### Migrations
 - Managed using Flask-Migrate
@@ -145,12 +146,12 @@ ORDER BY rank;
 1. **Data Integrity**
    - Use foreign key constraints
    - Implement cascading deletes
-   - Validate data before insertion
+   - Use appropriate data types
 
 2. **Performance**
-   - Use appropriate indexes
-   - Optimize queries for FTS
-   - Regular VACUUM maintenance
+   - Use GIN index for full-text search
+   - Regular VACUUM ANALYZE
+   - Monitor query performance
 
 3. **Security**
    - Store only hashed passwords
@@ -173,42 +174,40 @@ db.session.commit()
 
 ### Searching Books
 ```python
-results = Book.query.join(
-    Book.fts,
-    isouter=True
-).filter(
-    BookFTS.match('search term')
-).all()
+from sqlalchemy import text
+results = Book.query.filter(
+    text("search_vector @@ plainto_tsquery('books_fts_config', :query)")
+).params(query='search terms').all()
 ```
 
 ### Updating Status
 ```python
 book = db.session.get(Book, book_id)
 book.status = "read"
-book.date_read = datetime.now()
+book.date_read = datetime.now(timezone.utc)
 db.session.commit()
 ```
 
 ## Troubleshooting
 
-1. **FTS Not Working**
-   - Run `rebuild_fts_search.py`
-   - Check SQLite version supports FTS5
-   - Verify triggers are in place
+1. **Search Issues**
+   - Check text search configuration
+   - Verify GIN index exists
+   - Monitor search performance
 
 2. **Performance Issues**
-   - Check indexes are being used
-   - Analyze query plans
-   - Consider database optimization
+   - Check query plans with EXPLAIN ANALYZE
+   - Update table statistics
+   - Review index usage
 
 3. **Data Integrity**
-   - Use foreign key checks
-   - Verify cascade behavior
-   - Check constraint violations
+   - Check foreign key constraints
+   - Verify timezone handling
+   - Monitor transaction logs
 
 ## Further Reading
 
-- [SQLite Documentation](https://sqlite.org/docs.html)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [PostgreSQL Full Text Search](https://www.postgresql.org/docs/current/textsearch.html)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
-- [FTS5 Documentation](https://sqlite.org/fts5.html)
 - [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/) 
