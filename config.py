@@ -12,13 +12,15 @@ class Config:
         raise ValueError('Production database must be PostgreSQL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Email config with SendGrid support
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.sendgrid.net')
+    # Email config with Gmail OAuth2 support
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
     MAIL_USE_TLS = True
-    MAIL_USERNAME = 'apikey'  # This is always 'apikey' for SendGrid
-    MAIL_PASSWORD = os.environ.get('SENDGRID_API_KEY')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_USE_OAUTH2 = os.environ.get('MAIL_USE_OAUTH2', 'True').lower() == 'true'
+    MAIL_OAUTH_CLIENT_ID = os.environ.get('MAIL_OAUTH_CLIENT_ID')
+    MAIL_OAUTH_CLIENT_SECRET = os.environ.get('MAIL_OAUTH_CLIENT_SECRET')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@readkeeper.com')
     MAIL_SUPPRESS_SEND = os.environ.get('FLASK_ENV') != 'production'
     
     # Rate limiting

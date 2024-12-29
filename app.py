@@ -82,6 +82,7 @@ def create_app(config_object=None):
     from routes.stats import bp as stats_bp
     from routes.monitoring import bp as monitoring_bp
     from routes.admin import bp as admin_bp
+    from routes.oauth import bp as oauth_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(books_bp)
@@ -91,6 +92,7 @@ def create_app(config_object=None):
     app.register_blueprint(stats_bp)
     app.register_blueprint(monitoring_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(oauth_bp)
 
     # Error handlers
     @app.errorhandler(429)
