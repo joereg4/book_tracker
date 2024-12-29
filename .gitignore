@@ -52,3 +52,8 @@ ENV/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Database backups
+backups/
+*.sql
+*.sql.gz

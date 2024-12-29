@@ -128,13 +128,32 @@ ORDER BY ts_rank(search_vector, plainto_tsquery('books_fts_config', 'search term
 
 ### Backup
 ```bash
-pg_dump books > backup.sql
+# Manual backup
+python backup_db.py
+
+# Automated daily backup (add to crontab)
+0 2 * * * cd /path/to/app && /path/to/venv/bin/python backup_db.py
 ```
+
+Features:
+- Creates compressed SQL dumps (.sql.gz)
+- Includes schema and data
+- Automatic cleanup of backups older than 7 days
+- Shows backup sizes and history
+- Secure credential handling via environment variables
 
 ### Restore
 ```bash
-psql books < backup.sql
+# Restore from latest backup
+python restore_db.py
 ```
+
+Features:
+- Automatically finds and uses latest backup
+- Creates safety backup before restore
+- Handles both compressed and uncompressed backups
+- Automatic rollback on failure
+- Secure credential handling
 
 ### Migrations
 - Managed using Flask-Migrate
