@@ -7,7 +7,7 @@ class Config:
     
     # Database config
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'books.db')
+        'postgresql://localhost/books'  # Default to PostgreSQL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Email config
@@ -34,12 +34,10 @@ class Config:
 class TestConfig(Config):
     TESTING = True
     WTF_CSRF_ENABLED = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # Keep using SQLite for tests
     RATELIMIT_ENABLED = True
     RATELIMIT_STORAGE_URI = 'memory://'  # Use in-memory storage for tests
     RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}  # Consistent decode option
     SERVER_NAME = 'localhost.localdomain'
     SESSION_COOKIE_SECURE = False  # Allow testing without HTTPS
-    RATELIMIT_STORAGE_URI = 'memory://'
-    RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}
     MAIL_SUPPRESS_SEND = True
