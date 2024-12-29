@@ -12,13 +12,14 @@ class Config:
         raise ValueError('Production database must be PostgreSQL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Email config
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'localhost')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 8025))
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    # Email config with SendGrid support
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.sendgrid.net')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = 'apikey'  # This is always 'apikey' for SendGrid
+    MAIL_PASSWORD = os.environ.get('SENDGRID_API_KEY')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com')
+    MAIL_SUPPRESS_SEND = os.environ.get('FLASK_ENV') != 'production'
     
     # Rate limiting
     RATELIMIT_STORAGE_URI = os.environ.get('REDIS_URL', 'redis://localhost:6379')
