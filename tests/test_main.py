@@ -7,7 +7,7 @@ def test_index_empty(client):
     """Test index view for unauthenticated user"""
     response = client.get('/')
     assert response.status_code == 200
-    assert b'Welcome to Book Tracker' in response.data
+    assert b'Track Your Reading Journey' in response.data
     assert b'Login' in response.data
     assert b'Sign Up' in response.data
 

@@ -32,9 +32,16 @@ def test_email_oauth2_mode(app, monkeypatch):
     })
 
     # Mock Gmail API service
+    mock_execute = MagicMock(return_value={'id': 'test_message_id'})
+    mock_send = MagicMock()
+    mock_send.execute = mock_execute
+    mock_messages = MagicMock()
+    mock_messages.send = MagicMock(return_value=mock_send)
+    mock_users = MagicMock()
+    mock_users.messages = MagicMock(return_value=mock_messages)
     mock_service = MagicMock()
-    mock_service.users().messages().send().execute.return_value = {'id': 'test_message_id'}
-    
+    mock_service.users = MagicMock(return_value=mock_users)
+
     with patch('utils.email_service.build', return_value=mock_service):
         with app.app_context():
             result = send_email(
@@ -44,16 +51,23 @@ def test_email_oauth2_mode(app, monkeypatch):
                 name='Test User'
             )
             assert result is True
-            
+
             # Verify Gmail API was called
-            mock_service.users().messages().send.assert_called_once()
+            mock_service.users.assert_called_once()
+            mock_users.messages.assert_called_once()
+            mock_messages.send.assert_called_once()
 
 def test_email_smtp_mode(app):
     """Test email sending with regular SMTP"""
     app.config.update({
         'MAIL_SUPPRESS_SEND': False,
         'MAIL_USE_OAUTH2': False,
-        'MAIL_DEFAULT_SENDER': 'noreply@readkeeper.com'
+        'MAIL_DEFAULT_SENDER': 'noreply@readkeeper.com',
+        'MAIL_USERNAME': 'test@example.com',
+        'MAIL_PASSWORD': 'test_password',
+        'MAIL_SERVER': 'smtp.example.com',
+        'MAIL_PORT': 587,
+        'MAIL_USE_TLS': True
     })
     
     with patch('flask_mail.Mail.send') as mock_send:
@@ -86,11 +100,13 @@ def test_email_oauth2_no_token(app):
         'OAUTH_TOKEN_DATA': None
     })
     
-    with app.app_context():
-        result = send_email(
-            subject='Test Email',
-            recipient='test@example.com',
-            template='test',
-            name='Test User'
-        )
-        assert result is False 
+    # Ensure no token file exists
+    with patch('utils.email_service.load_oauth_token', return_value=None):
+        with app.app_context():
+            result = send_email(
+                subject='Test Email',
+                recipient='test@example.com',
+                template='test',
+                name='Test User'
+            )
+            assert result is False 
