@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from dotenv import find_dotenv, load_dotenv
 
-# Find and load .env file
+# Load environment variables
 env_path = find_dotenv()
 load_dotenv(env_path, override=True)
 

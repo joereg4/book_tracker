@@ -43,6 +43,7 @@ def strip_html_tags(text):
 
 @bp.route('/search', methods=['GET', 'POST'])
 @limiter.limit("30 per minute")
+@login_required
 def search():
     """Search for books using Google Books API"""
     if request.method == 'POST':
@@ -71,7 +72,7 @@ def search():
         
         # Get existing books from database for comparison
         existing_books = {book.google_books_id: book.status 
-                         for book in Book.query.all()}
+                         for book in Book.query.filter_by(user_id=current_user.id).all()}
         
         # Clean up the query if it's a subject search
         if query.startswith('subject:'):
