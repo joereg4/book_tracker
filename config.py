@@ -6,12 +6,16 @@ class Config:
     SECRET_KEY = os.environ.get('FLASK_SECRET_KEY') or 'dev-key-please-change'
     
     # Database config
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://localhost/books'  # PostgreSQL is required for production
-    if not SQLALCHEMY_DATABASE_URI.startswith('postgresql://'):
-        raise ValueError('Production database must be PostgreSQL')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+    with open('/var/www/book_tracker/.env') as f:
+        for line in f:
+            if line.startswith('DATABASE_URL='):
+                SQLALCHEMY_DATABASE_URI = line.split('=', 1)[1].strip()
+                print("Found database URL in .env:", SQLALCHEMY_DATABASE_URI)
+                break
+        else:
+            SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/books'
+            print("Using default database URL:", SQLALCHEMY_DATABASE_URI)
+
     # Email config with Gmail OAuth2 support
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
