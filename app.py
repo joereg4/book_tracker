@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, abort, flash, redirect, url_for
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from extensions import (
     db, login_manager, csrf, limiter,
     mail, migrate
@@ -58,7 +58,7 @@ def create_app(config_object=None):
     def load_user(user_id):
         user = db.session.get(User, int(user_id))
         if user:
-            user.last_seen = datetime.now(UTC)
+            user.last_seen = datetime.now(timezone.utc)
             db.session.commit()
         return user
 
