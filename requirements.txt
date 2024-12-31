@@ -4,7 +4,12 @@ pandas>=2.2.1
 python-dotenv>=1.0.1
 requests>=2.31.0
 SQLAlchemy>=2.0.27
-google-api-python-client>=2.118.0
+google-api-python-client>=2.155.0
+google-auth>=2.36.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.1
+google-api-core>=2.23.0
+googleapis-common-protos>=1.66.0
 Flask-Login==0.6.3
 Flask-Bcrypt==1.0.1
 Flask-Migrate==4.0.7
