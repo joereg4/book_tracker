@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 import secrets
 from models import User
 from extensions import db, limiter
@@ -16,7 +16,7 @@ def check_login_rate_limit(ip_address):
         if isinstance(redis_client, DummyRedis):
             return False
         
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         minute_key = f"login_attempts:{ip_address}:{now.strftime('%Y-%m-%d:%H:%M')}"
         
         attempts = int(redis_client.get(minute_key) or 0)

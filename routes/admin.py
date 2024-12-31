@@ -2,7 +2,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required
 from utils.decorators import admin_required
 from models import User, db
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timezone, timedelta
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -14,7 +14,7 @@ def dashboard():
     # Get user statistics
     total_users = User.query.count()
     active_users = User.query.filter(
-        User.last_seen >= datetime.now(UTC) - timedelta(days=30)
+        User.last_seen >= datetime.now(timezone.utc) - timedelta(days=30)
     ).count()
     admin_users = User.query.filter_by(is_admin=True).count()
     

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, UTC
+from datetime import datetime, timezone
 from flask_login import UserMixin
 from extensions import db
 
@@ -13,7 +13,7 @@ class Book(db.Model):
     isbn13 = db.Column(db.String)
     published_date = db.Column(db.String)
     status = db.Column(db.String, nullable=False, default='to_read')
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     date_read = db.Column(db.DateTime, nullable=True)
     google_books_id = db.Column(db.String)
     etag = db.Column(db.String)
@@ -95,8 +95,8 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
-    last_seen = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     reset_token = db.Column(db.String(100), unique=True)
     reset_token_expiry = db.Column(db.DateTime)
     

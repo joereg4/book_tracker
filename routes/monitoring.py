@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, render_template
 from flask_login import login_required
 from extensions import limiter
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timezone, timedelta
 import redis
 import json
 from utils.decorators import admin_required
@@ -23,7 +23,7 @@ except (redis.ConnectionError, redis.RedisError):
 def record_rate_limit_hit(endpoint, user_ip):
     """Record a rate limit hit in Redis"""
     try:
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         day_key = f"rate_limits:{endpoint}:{now.strftime('%Y-%m-%d')}"
         hour_key = f"rate_limits:{endpoint}:{now.strftime('%Y-%m-%d:%H')}"
         
@@ -57,13 +57,13 @@ def rate_limits_dashboard():
             hourly_stats = {}
         else:
             # Get today's stats
-            today = datetime.now(UTC).strftime('%Y-%m-%d')
+            today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
             today_key = f"rate_limits:login:{today}"
             today_hits = redis_client.hgetall(today_key) or {}
             
             # Get hourly stats for the past 24 hours
             hourly_stats = {}
-            now = datetime.now(UTC)
+            now = datetime.now(timezone.utc)
             for i in range(24):
                 hour = now - timedelta(hours=i)
                 hour_key = f"rate_limits:login:{hour.strftime('%Y-%m-%d:%H')}"
@@ -85,7 +85,7 @@ def rate_limits_dashboard():
 @admin_required
 def rate_limits_api():
     """API endpoint for rate limit metrics"""
-    today = datetime.now(UTC).strftime('%Y-%m-%d')
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     endpoints = ['login', 'book_search']
     
     try:
@@ -101,7 +101,7 @@ def rate_limits_api():
             metrics = {}
             for endpoint in endpoints:
                 day_key = f"rate_limits:{endpoint}:{today}"
-                hour_key = f"rate_limits:{endpoint}:{datetime.now(UTC).strftime('%Y-%m-%d:%H')}"
+                hour_key = f"rate_limits:{endpoint}:{datetime.now(timezone.utc).strftime('%Y-%m-%d:%H')}"
                 
                 day_hits = redis_client.hgetall(day_key) or {}
                 hour_hits = redis_client.hgetall(hour_key) or {}

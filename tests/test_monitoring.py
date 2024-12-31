@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timezone, timedelta
 from flask import url_for
 from models import User, db
 from werkzeug.security import generate_password_hash
@@ -12,7 +12,7 @@ def test_record_rate_limit_hit(redis_client):
     record_rate_limit_hit('book_search', '127.0.0.1')
 
     # Check data was recorded
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     today = now.strftime('%Y-%m-%d')
     hour = now.strftime('%Y-%m-%d:%H')
 
@@ -105,7 +105,7 @@ def test_rate_limit_integration(client, redis_client):
     from extensions import limiter
     
     # Clear any existing rate limits
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     redis_client.delete(f"login_attempts:127.0.0.1:{now.strftime('%Y-%m-%d:%H:%M')}")
     limiter.reset()
 

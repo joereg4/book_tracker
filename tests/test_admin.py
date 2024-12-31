@@ -1,6 +1,6 @@
 from models import User
 from werkzeug.security import generate_password_hash
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timezone, timedelta
 
 def test_admin_dashboard_access(client, db_session):
     """Test access to admin dashboard"""
@@ -74,8 +74,8 @@ def test_admin_dashboard_content(client, db_session):
             email=f'user{i}@example.com',
             password=generate_password_hash('testpass123'),
             is_admin=i == 0,  # First user is admin
-            created_at=datetime.now(UTC) - timedelta(days=i),
-            last_seen=datetime.now(UTC) - timedelta(hours=i) if i < 3 else None
+            created_at=datetime.now(timezone.utc) - timedelta(days=i),
+            last_seen=datetime.now(timezone.utc) - timedelta(hours=i) if i < 3 else None
         )
         for i in range(10)
     ]
