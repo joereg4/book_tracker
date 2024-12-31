@@ -1,30 +1,31 @@
 import os
 from datetime import timedelta
+from dotenv import find_dotenv, load_dotenv
+
+# Find and load .env file
+env_path = find_dotenv()
+load_dotenv(env_path, override=True)
 
 class Config:
     # Basic Flask config
-    SECRET_KEY = os.environ.get('FLASK_SECRET_KEY') or 'dev-key-please-change'
+    SECRET_KEY = os.environ.get('FLASK_SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError("No FLASK_SECRET_KEY set in environment")
     
     # Database config
-    with open('/var/www/book_tracker/.env') as f:
-        for line in f:
-            if line.startswith('DATABASE_URL='):
-                SQLALCHEMY_DATABASE_URI = line.split('=', 1)[1].strip()
-                print("Found database URL in .env:", SQLALCHEMY_DATABASE_URI)
-                break
-        else:
-            SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/books'
-            print("Using default database URL:", SQLALCHEMY_DATABASE_URI)
-
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("No DATABASE_URL set in environment")
+    
     # Email config with Gmail OAuth2 support
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
-    MAIL_USE_TLS = True
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_USE_OAUTH2 = os.environ.get('MAIL_USE_OAUTH2', 'True').lower() == 'true'
     MAIL_OAUTH_CLIENT_ID = os.environ.get('MAIL_OAUTH_CLIENT_ID')
     MAIL_OAUTH_CLIENT_SECRET = os.environ.get('MAIL_OAUTH_CLIENT_SECRET')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@readkeeper.com')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
     MAIL_SUPPRESS_SEND = os.environ.get('FLASK_ENV') != 'production'
     
     # Rate limiting
@@ -36,21 +37,20 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=31)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    
-    # Only require secure cookies in production
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
 
 class TestConfig(Config):
     TESTING = True
     WTF_CSRF_ENABLED = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # Use SQLite for faster tests
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     RATELIMIT_ENABLED = True
-    RATELIMIT_STORAGE_URI = 'memory://'  # Use in-memory storage for tests
-    RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}  # Consistent decode option
+    RATELIMIT_STORAGE_URI = 'memory://'
+    RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}
     SERVER_NAME = 'localhost.localdomain'
-    SESSION_COOKIE_SECURE = False  # Allow testing without HTTPS
+    SESSION_COOKIE_SECURE = False
     MAIL_SUPPRESS_SEND = True
+    SECRET_KEY = 'test-key'
     
     def __init__(self):
-        # Override the PostgreSQL check for tests
+        # Override the environment variable checks for tests
         pass

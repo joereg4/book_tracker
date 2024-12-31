@@ -1,16 +1,20 @@
 from app import create_app
 import os
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-print("Before load_dotenv:")
-print("ENV FILE PATH:", os.path.abspath('.env'))
-print("ENV EXISTS:", os.path.exists('.env'))
-print("DATABASE_URL:", os.getenv('SQLALCHEMY_DATABASE_URI'))
+# Debug information about environment
+print("Current working directory:", os.getcwd())
+print("Contents of current directory:", os.listdir())
 
-load_dotenv('/var/www/book_tracker/.env', verbose=True)
+# Find and load .env file
+env_path = find_dotenv()
+print("Found .env at:", env_path)
+load_dotenv(env_path, override=True, verbose=True)
 
-print("After load_dotenv:")
-print("DATABASE_URL:", os.getenv('SQLALCHEMY_DATABASE_URI'))
+# Print relevant environment variables
+print("Environment after loading:")
+print("FLASK_ENV:", os.getenv('FLASK_ENV'))
+print("DATABASE_URL:", os.getenv('DATABASE_URL'))
 
 app = create_app()
 
