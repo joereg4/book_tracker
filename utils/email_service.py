@@ -61,32 +61,27 @@ def send_email(subject, recipient, template, **kwargs):
     Send an email using Gmail API with OAuth2
     """
     logger.debug("Starting email send process")
-    logger.debug(f"Current config: {current_app.config}")
     
     # Render template with kwargs
     try:
         text_body = render_template(f'email/{template}.txt', **kwargs)
         html_body = render_template(f'email/{template}.html', **kwargs)
-        logger.debug("Email templates rendered successfully")
     except Exception as e:
-        logger.error(f"Failed to render email templates: {str(e)}", exc_info=True)
+        logger.error(f"Failed to render email templates: {str(e)}")
         return False
     
     if current_app.config.get('MAIL_SUPPRESS_SEND'):
-        logger.debug("Email suppressed in development mode")
         logger.info(f"Would have sent email to {recipient}: {subject}")
         return True
     
     try:
         # Get OAuth2 credentials
         if current_app.config.get('MAIL_USE_OAUTH2'):
-            logger.debug("Using OAuth2 for authentication")
             token_data = current_app.config.get('OAUTH_TOKEN_DATA') or load_oauth_token()
             if not token_data:
                 logger.error("OAuth2 token not found")
                 return False
             
-            logger.debug("Creating credentials from token data")
             credentials = Credentials(
                 token=token_data['token'],
                 refresh_token=token_data['refresh_token'],
@@ -97,14 +92,12 @@ def send_email(subject, recipient, template, **kwargs):
             )
             
             # Create Gmail API service
-            logger.debug("Creating Gmail API service")
             service = build('gmail', 'v1', credentials=credentials)
             
             # Create and send the message
             sender = current_app.config['MAIL_DEFAULT_SENDER']
             message = create_message(sender, recipient, subject, text_body, html_body)
             
-            logger.debug("Attempting to send email via Gmail API")
             service.users().messages().send(userId='me', body=message).execute()
             logger.info(f"Email sent successfully to {recipient}")
             return True
@@ -118,12 +111,9 @@ def send_email(subject, recipient, template, **kwargs):
                 html=html_body
             )
             mail.send(msg)
-            logger.info(f"Email sent successfully to {recipient} using Flask-Mail")
+            logger.info(f"Email sent successfully to {recipient}")
             return True
         
     except Exception as e:
-        logger.error("Failed to send email")
-        logger.error(f"Error type: {type(e).__name__}")
-        logger.error(f"Error message: {str(e)}")
-        logger.error("Full traceback:", exc_info=True)
+        logger.error(f"Failed to send email to {recipient}: {str(e)}")
         return False 
