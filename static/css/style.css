@@ -1,0 +1,24 @@
+.logo {
+    font-size: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.logo .read {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: #2196F3;
+}
+
+.logo .keeper {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+    color: #ffffff;
+    margin-left: 0.1em;
+}
+
+/* Add hover effect */
+.navbar-brand:hover .read,
+.navbar-brand:hover .keeper {
+    opacity: 0.9;
+}
