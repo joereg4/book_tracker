@@ -168,6 +168,29 @@ See `backup_restore.md` for detailed procedures on:
 
 ## Email Configuration
 
+The application uses Gmail's OAuth2 for sending emails, with the following setup:
+
+1. Gmail Account Setup:
+   - Primary email: `noreply.readkeeper@gmail.com`
+   - Used with OAuth2 for secure email sending
+
+2. Domain Email Forwarding (Cloudflare):
+   - Public-facing email: `noreply@readkeeper.com`
+   - Forwards to: `noreply.readkeeper@gmail.com`
+   - Configured through Cloudflare Email Routing
+
+3. Environment Variables:
+   ```bash
+   MAIL_DEFAULT_SENDER=noreply@readkeeper.com
+   MAIL_USERNAME=noreply.readkeeper@gmail.com
+   MAIL_USE_OAUTH2=True
+   ```
+
+This setup ensures that:
+- Emails appear to come from the official domain
+- Email sending is handled securely through Gmail's infrastructure
+- All replies are properly routed through the forwarding system
+
 1. **SMTP Setup**:
    ```bash
    # Production email settings in .env

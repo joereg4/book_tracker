@@ -83,6 +83,7 @@ def create_app(config_object=None):
     from routes.monitoring import bp as monitoring_bp
     from routes.admin import bp as admin_bp
     from routes.oauth import bp as oauth_bp
+    from routes.legal import bp as legal_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(books_bp)
@@ -93,7 +94,7 @@ def create_app(config_object=None):
     app.register_blueprint(monitoring_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(oauth_bp)
-
+    app.register_blueprint(legal_bp)
     # Error handlers
     @app.errorhandler(429)
     def ratelimit_handler(e):
