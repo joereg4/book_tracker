@@ -3,13 +3,14 @@ from flask.cli import with_appcontext
 from utils.email_service import send_email
 from flask import current_app
 from utils.oauth2 import get_oauth2_credentials
+from routes.monitoring import redis_client
 import webbrowser
 import os
 import json
 import logging
 
 logger = logging.getLogger(__name__)
-TOKEN_FILE = 'instance/oauth2_token.json'
+REDIS_TOKEN_KEY = 'oauth2_token'
 
 @click.group(name='email-cli')
 def email_cli():
@@ -17,17 +18,24 @@ def email_cli():
     pass
 
 def load_oauth_token():
-    """Load OAuth token from file"""
-    if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, 'r') as f:
-            return json.load(f)
-    return None
+    """Load OAuth token from Redis"""
+    try:
+        token_data = redis_client.get(REDIS_TOKEN_KEY)
+        if token_data:
+            return json.loads(token_data)
+        return None
+    except Exception as e:
+        logger.error(f"Error loading token from Redis: {str(e)}")
+        return None
 
 def save_oauth_token(token_data):
-    """Save OAuth token to file"""
-    os.makedirs(os.path.dirname(TOKEN_FILE), exist_ok=True)
-    with open(TOKEN_FILE, 'w') as f:
-        json.dump(token_data, f)
+    """Save OAuth token to Redis"""
+    try:
+        redis_client.set(REDIS_TOKEN_KEY, json.dumps(token_data))
+        logger.debug("Token saved to Redis successfully")
+    except Exception as e:
+        logger.error(f"Error saving token to Redis: {str(e)}")
+        raise click.ClickException("Failed to save OAuth token")
 
 @email_cli.command()
 @click.argument('recipient')
@@ -53,7 +61,7 @@ def test(recipient):
         current_app.config['OAUTH_TOKEN_DATA'] = token_data
     
     success = send_email(
-        'Test Email from Book Tracker',
+        'Test Email from ReadKeeper',
         recipient,
         'test_email',
         name=recipient.split('@')[0]

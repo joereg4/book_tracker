@@ -11,6 +11,7 @@ import base64
 import os
 import json
 import sys
+from routes.monitoring import redis_client
 
 # Configure logging to show in console
 logger = logging.getLogger(__name__)
@@ -21,18 +22,22 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-TOKEN_FILE = 'instance/oauth2_token.json'
+REDIS_TOKEN_KEY = 'oauth2_token'
 
 def load_oauth_token():
-    """Load OAuth token from file"""
-    if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, 'r') as f:
-            logger.debug(f"Loading OAuth token from {TOKEN_FILE}")
-            data = json.load(f)
+    """Load OAuth token from Redis"""
+    try:
+        token_data = redis_client.get(REDIS_TOKEN_KEY)
+        if token_data:
+            logger.debug("Loading OAuth token from Redis")
+            data = json.loads(token_data)
             logger.debug(f"Token loaded successfully: {data.keys()}")
             return data
-    logger.warning(f"No token file found at {TOKEN_FILE}")
-    return None
+        logger.warning("No token found in Redis")
+        return None
+    except Exception as e:
+        logger.error(f"Error loading token from Redis: {str(e)}")
+        return None
 
 def create_message(sender, to, subject, text, html):
     """Create a message for an email."""
