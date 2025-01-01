@@ -43,8 +43,9 @@ def create_message(sender, to, subject, text, html):
     """Create a message for an email."""
     message = MIMEMultipart('alternative')
     message['to'] = to
-    message['from'] = sender
+    message['from'] = f"ReadKeeper <{current_app.config['MAIL_USERNAME']}>"
     message['subject'] = subject
+    message['reply-to'] = current_app.config['MAIL_DEFAULT_SENDER']
 
     # Add text and HTML parts
     message.attach(MIMEText(text, 'plain'))
