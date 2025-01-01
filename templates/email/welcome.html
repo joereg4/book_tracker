@@ -1,0 +1,22 @@
+{% extends "email/base.html" %}
+
+{% block content %}
+<div class="content">
+    <p>Welcome to ReadKeeper, {{ name }}!</p>
+    
+    <p>Thank you for joining our community of book lovers. With ReadKeeper, you can:</p>
+    <ul>
+        <li>Track your reading progress</li>
+        <li>Discover new books</li>
+        <li>Organize your reading list</li>
+        <li>View detailed statistics about your reading habits</li>
+    </ul>
+    
+    <p>Ready to start tracking your reading journey?</p>
+    <p style="text-align: center;">
+        <a href="https://readkeeper.com/books/add" class="button">Add Your First Book</a>
+    </p>
+    
+    <p>If you have any questions or need assistance, feel free to reply to this email.</p>
+</div>
+{% endblock %} 

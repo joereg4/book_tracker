@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import secrets
 from models import User
 from extensions import db, limiter
-from utils.email import send_password_reset_email
+from utils.email import send_password_reset_email, send_welcome_email
 from routes.monitoring import record_rate_limit_hit, redis_client, DummyRedis
 
 bp = Blueprint('auth', __name__)
@@ -58,11 +58,21 @@ def signup():
             password=generate_password_hash(password)
         )
 
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            
+            # Send welcome email
+            send_welcome_email(new_user)
+            
+            # Log the user in
+            login_user(new_user)
+            flash('Account created successfully!', 'success')
+            return redirect(url_for('main.index'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while creating your account.', 'error')
+            return redirect(url_for('auth.signup'))
 
     return render_template('auth/signup.html')
 

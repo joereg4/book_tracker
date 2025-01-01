@@ -22,7 +22,7 @@ def test_signup_success(client, db_session):
     }, follow_redirects=True)
     
     assert response.status_code == 200
-    assert b'Registration successful!' in response.data
+    assert b'Account created successfully!' in response.data
     
     # Verify user was created
     user = User.query.filter_by(username='newuser').first()
