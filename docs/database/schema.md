@@ -36,6 +36,34 @@ Fields:
 - `reset_token`: Password reset token
 - `reset_token_expiry`: Reset token expiration timestamp
 
+### OAuth2 Tokens
+
+```sql
+CREATE TABLE oauth2_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_type VARCHAR(20) NOT NULL,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX ix_oauth2_tokens_user_id ON oauth2_tokens (user_id);
+CREATE INDEX ix_oauth2_tokens_expires_at ON oauth2_tokens (expires_at);
+```
+
+Fields:
+- `id`: Unique identifier (auto-incrementing)
+- `user_id`: Reference to users table
+- `token_type`: Type of OAuth2 token (e.g., 'gmail')
+- `access_token`: OAuth2 access token
+- `refresh_token`: OAuth2 refresh token
+- `expires_at`: Token expiration timestamp
+- `created_at`: Token creation timestamp
+- `updated_at`: Last token update timestamp
+
 ### Books
 
 ```sql

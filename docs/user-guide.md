@@ -42,7 +42,7 @@
    - D: Preview panel
 
 4. **Book Details**
-   ![Book Details](images/book-details.png)
+   ![Book Details](images/book-detail.png)
    - A: Cover image
    - B: Metadata
    - C: Description

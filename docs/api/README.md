@@ -40,6 +40,8 @@ See [Rate Limiting](rate-limiting.md) for details.
 - `POST /logout` - User logout
 - `POST /forgot-password` - Request password reset
 - `POST /reset-password/<token>` - Reset password with token
+- `GET /oauth2callback` - OAuth2 callback handler
+- `GET /authorize` - Initiate OAuth2 flow
 
 ### Books
 

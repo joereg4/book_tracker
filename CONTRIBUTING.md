@@ -17,8 +17,45 @@ git checkout -b feature/your-feature-name
 ## Development Setup
 
 1. Follow the installation instructions in the README.md
-2. Make sure all tests pass before making changes
-3. Add tests for any new features
+2. Set up your virtual environment:
+```bash
+python -m venv books
+source books/bin/activate  # On Unix/macOS
+books\Scripts\activate     # On Windows
+```
+3. Install development dependencies:
+```bash
+pip install -r requirements.txt
+pip install pytest pytest-cov flake8 black
+```
+4. Set up pre-commit hooks:
+```bash
+pip install pre-commit
+pre-commit install
+```
+5. Make sure all tests pass:
+```bash
+pytest
+```
+
+## Testing
+
+1. Run the test suite:
+```bash
+pytest
+```
+2. Check code coverage:
+```bash
+pytest --cov=.
+```
+3. Run linting:
+```bash
+flake8 .
+```
+4. Format code:
+```bash
+black .
+```
 
 ## Making Changes
 

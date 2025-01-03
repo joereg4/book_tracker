@@ -1,5 +1,26 @@
 # Security Policy
 
+## Security Features
+
+Book Tracker implements several security measures:
+
+1. **Authentication & Authorization**
+   - Secure password hashing
+   - OAuth2 authentication for email services
+   - Rate limiting on authentication endpoints
+   - Session management with secure cookies
+
+2. **Data Protection**
+   - CSRF protection on all forms
+   - Secure handling of environment variables
+   - Database backup and restore utilities
+   - Input validation and sanitization
+
+3. **API Security**
+   - Rate limiting on API endpoints
+   - Secure handling of API keys
+   - OAuth2 for third-party integrations
+
 ## Reporting a Vulnerability
 
 We take the security of Book Tracker seriously. If you believe you have found a security vulnerability, please report it by creating a new Issue:

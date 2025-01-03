@@ -207,7 +207,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 # Email Configuration
 
-Email functionality is optional in development (defaults to console output) but required for production. To configure email:
+Email functionality is optional in development (defaults to console output) but required for production. The application uses Gmail OAuth2 for secure email handling.
 
 1. Development Setup:
 ```bash
@@ -215,22 +215,28 @@ Email functionality is optional in development (defaults to console output) but 
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=True
-MAIL_USERNAME=your_email@example.com
-MAIL_PASSWORD=your_app_password
-MAIL_DEFAULT_SENDER=noreply@example.com
+MAIL_USERNAME=your_email@gmail.com
+MAIL_USE_OAUTH2=True
+MAIL_OAUTH_CLIENT_ID=your_oauth_client_id
+MAIL_OAUTH_CLIENT_SECRET=your_oauth_client_secret
+MAIL_DEFAULT_SENDER=noreply@yourdomain.com
 
 # Test email configuration
 flask email-cli test test@example.com
 ```
 
-2. Gmail Setup:
-- Enable 2-factor authentication
-- Generate an App Password
-- Use App Password in MAIL_PASSWORD
+2. Gmail OAuth2 Setup:
+- Go to Google Cloud Console
+- Create a new project or select existing one
+- Enable Gmail API
+- Configure OAuth2 consent screen
+- Create OAuth2 credentials (Web application type)
+- Add authorized redirect URIs
+- Use the client ID and client secret in your .env file
 
 3. Production Setup:
 - Set FLASK_ENV=production
-- Configure real SMTP credentials
+- Configure OAuth2 credentials
 - Test email delivery
 - Monitor email logs
 

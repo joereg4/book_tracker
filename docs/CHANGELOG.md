@@ -2,7 +2,7 @@
 
 All notable changes to the Book Tracker documentation will be documented in this file.
 
-## [1.0.0] - 2024-03-14
+## [1.0.0] - 2024-12-29
 
 ### Added
 - Initial documentation structure
@@ -37,7 +37,7 @@ All notable changes to the Book Tracker documentation will be documented in this
 - Fixed inconsistent formatting
 - Clarified ambiguous instructions
 
-## [0.1.0] - 2024-03-13
+## [0.1.0] - 2024-12-15
 
 ### Added
 - Basic README structure

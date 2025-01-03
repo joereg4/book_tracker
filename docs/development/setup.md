@@ -48,19 +48,33 @@ FLASK_ENV=development
 FLASK_DEBUG=1
 
 # Database configuration
-DATABASE_URL=postgresql://username@localhost/books
+DATABASE_URL=postgresql://localhost/books
 
 # Google Books API
-GOOGLE_BOOKS_API_KEY=your-google-books-api-key
+GOOGLE_BOOKS_API_KEY=your_google_books_api_key_here
 
-# Email configuration (Development)
-MAIL_SUPPRESS_SEND=True  # Set to False to actually send emails
+# OAuth2 Configuration
+GOOGLE_OAUTH_CLIENT_ID=your_oauth_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_oauth_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:5000/oauth2callback
+
+# Email Configuration
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=True
-MAIL_USERNAME=your-email@gmail.com
-MAIL_DEFAULT_SENDER=your-email@gmail.com
+MAIL_USERNAME=your_email@gmail.com
+MAIL_USE_OAUTH2=True
+MAIL_DEFAULT_SENDER=noreply@yourdomain.com
 ```
+
+6. Set up OAuth2 credentials:
+   - Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project or select existing one
+   - Enable Gmail API and Google Books API
+   - Configure OAuth2 consent screen
+   - Create OAuth2 credentials (Web application type)
+   - Add authorized redirect URIs
+   - Copy credentials to your `.env` file
 
 6. Initialize the database:
 ```bash

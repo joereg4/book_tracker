@@ -26,6 +26,7 @@ This guide covers the deployment process for the Book Tracker application.
    - All environment variables set
    - PostgreSQL credentials secured
    - Application secrets generated
+   - OAuth2 credentials configured
 
 ## Deployment Steps
 
@@ -38,7 +39,14 @@ This guide covers the deployment process for the Book Tracker application.
    sudo apt install python3-pip postgresql nginx certbot python3-certbot-nginx
    ```
 
-2. **Application Setup**
+2. **OAuth2 Configuration**
+   - Set up Google Cloud Project
+   - Configure OAuth2 consent screen
+   - Create OAuth2 credentials
+   - Add production domain to authorized redirect URIs
+   - Update environment variables with OAuth2 credentials
+
+3. **Application Setup**
    ```bash
    # Create application user
    sudo useradd -m -s /bin/bash books_app
@@ -52,19 +60,19 @@ This guide covers the deployment process for the Book Tracker application.
    pip install -r requirements.txt
    ```
 
-3. **Database Setup**
+4. **Database Setup**
    - Follow `postgres_migration.md` for database setup
    - Run initial migrations
    - Verify database connection
 
-4. **Server Configuration**
+5. **Server Configuration**
    - Follow `server_config.md` for sensitive configurations:
      - Systemd service setup
      - Log rotation
      - Nginx configuration
      - SSL setup
 
-5. **Security Setup**
+6. **Security Setup**
    - Configure firewall
    - Set up fail2ban
    - Secure file permissions
@@ -179,31 +187,22 @@ The application uses Gmail's OAuth2 for sending emails, with the following setup
    - Forwards to: `noreply.readkeeper@gmail.com`
    - Configured through Cloudflare Email Routing
 
-3. Environment Variables:
+3. OAuth2 Configuration:
    ```bash
-   MAIL_DEFAULT_SENDER=noreply@readkeeper.com
-   MAIL_USERNAME=noreply.readkeeper@gmail.com
-   MAIL_USE_OAUTH2=True
-   ```
-
-This setup ensures that:
-- Emails appear to come from the official domain
-- Email sending is handled securely through Gmail's infrastructure
-- All replies are properly routed through the forwarding system
-
-1. **SMTP Setup**:
-   ```bash
-   # Production email settings in .env
+   # Production OAuth2 settings in .env
    FLASK_ENV=production
-   MAIL_SERVER=smtp.your-provider.com
+   MAIL_SERVER=smtp.gmail.com
    MAIL_PORT=587
    MAIL_USE_TLS=True
-   MAIL_USERNAME=your_email
-   MAIL_PASSWORD=your_secure_password
-   MAIL_DEFAULT_SENDER=noreply@your-domain.com
+   MAIL_USE_OAUTH2=True
+   MAIL_USERNAME=noreply.readkeeper@gmail.com
+   MAIL_DEFAULT_SENDER=noreply@readkeeper.com
+   MAIL_OAUTH_CLIENT_ID=your_oauth_client_id
+   MAIL_OAUTH_CLIENT_SECRET=your_oauth_client_secret
+   MAIL_OAUTH_REFRESH_TOKEN=your_oauth_refresh_token
    ```
 
-2. **Email Testing**:
+4. Email Testing:
    ```bash
    # Test email configuration
    flask email-cli test admin@your-domain.com
@@ -212,14 +211,14 @@ This setup ensures that:
    sudo journalctl -u book_tracker.service | grep "email"
    ```
 
-3. **Security Considerations**:
+5. Security Considerations:
    - Use environment variables for credentials
    - Enable TLS/SSL for email
    - Monitor failed email attempts
-   - Regularly rotate email credentials
+   - Regularly rotate OAuth2 credentials
    - Set up email signing (DKIM/SPF)
 
-4. **Monitoring**:
+6. Monitoring:
    - Set up email delivery monitoring
    - Configure bounce notifications
    - Track email sending rates
