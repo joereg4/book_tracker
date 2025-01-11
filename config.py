@@ -17,15 +17,16 @@ class Config:
     if not SQLALCHEMY_DATABASE_URI:
         raise ValueError("No DATABASE_URL set in environment")
     
-    # Email config with Gmail OAuth2 support
-    MAIL_SERVER = os.environ.get('MAIL_SERVER')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    # Email config with support for both Gmail OAuth2 and Postfix
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'localhost')  # Default to local Postfix
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 25))  # Default Postfix port
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'False').lower() == 'true'
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_USE_OAUTH2 = os.environ.get('MAIL_USE_OAUTH2', 'True').lower() == 'true'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')  # For Postfix auth if needed
+    MAIL_USE_OAUTH2 = os.environ.get('MAIL_USE_OAUTH2', 'False').lower() == 'true'
     MAIL_OAUTH_CLIENT_ID = os.environ.get('MAIL_OAUTH_CLIENT_ID')
     MAIL_OAUTH_CLIENT_SECRET = os.environ.get('MAIL_OAUTH_CLIENT_SECRET')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@dev-mail.readkeeper.com')
     MAIL_SUPPRESS_SEND = os.environ.get('FLASK_ENV') != 'production'
     
     # Rate limiting
@@ -48,8 +49,16 @@ class TestConfig(Config):
     RATELIMIT_STORAGE_OPTIONS = {"decode_responses": True}
     SERVER_NAME = 'localhost.localdomain'
     SESSION_COOKIE_SECURE = False
-    MAIL_SUPPRESS_SEND = True
+    MAIL_SUPPRESS_SEND = True  # Suppress actual email sending during tests
     SECRET_KEY = 'test-key'
+    
+    # Test email settings (MailHog)
+    MAIL_SERVER = 'localhost'
+    MAIL_PORT = 1026
+    MAIL_USE_TLS = False
+    MAIL_USERNAME = None
+    MAIL_PASSWORD = None
+    MAIL_DEFAULT_SENDER = 'noreply@dev-mail.readkeeper.com'
     
     def __init__(self):
         # Override the environment variable checks for tests

@@ -1,0 +1,41 @@
+services:
+  postfix:
+    image: boky/postfix
+    container_name: readkeeper_postfix
+    ports:
+      - "1025:25"  # Using port 1025 to avoid conflicts with system services
+      - "1587:587"
+    environment:
+      - ALLOWED_SENDER_DOMAINS=dev-mail.readkeeper.com
+      - POSTFIX_myhostname=dev-mail.readkeeper.com
+      - POSTFIX_mydomain=dev-mail.readkeeper.com
+      - POSTFIX_debug_peer_level=2
+      - RELAYHOST=
+    volumes:
+      - ./docker/postfix/logs:/var/log
+    restart: unless-stopped
+    networks:
+      - readkeeper_net
+
+  # Add Redis for rate limiting
+  redis:
+    image: redis:alpine
+    container_name: readkeeper_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - readkeeper_net
+
+  # Add Mailhog for catching development emails
+  mailhog:
+    image: mailhog/mailhog
+    container_name: readkeeper_mailhog
+    ports:
+      - "8025:8025"  # Web UI
+      - "1026:1025"  # SMTP server
+    networks:
+      - readkeeper_net
+
+networks:
+  readkeeper_net:
+    name: readkeeper_network 

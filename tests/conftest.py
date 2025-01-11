@@ -8,6 +8,8 @@ from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash
 from flask_login import login_user
 from sqlalchemy import text
+from flask_mail import Mail
+from unittest.mock import patch
 
 def setup_fts(db_session):
     """Set up Full Text Search for testing if using PostgreSQL"""
@@ -143,3 +145,28 @@ def app_context(app):
     """Create application context for tests"""
     with app.app_context():
         yield
+
+@pytest.fixture(scope='function')
+def mail(app):
+    """Create a Mail instance for testing"""
+    mail = Mail(app)
+    return mail
+
+@pytest.fixture(autouse=True)
+def setup_test_emails(monkeypatch):
+    """Configure email settings for testing"""
+    monkeypatch.setenv('MAIL_SERVER', 'localhost')
+    monkeypatch.setenv('MAIL_PORT', '1026')
+    monkeypatch.setenv('MAIL_USE_TLS', 'False')
+    monkeypatch.setenv('MAIL_USERNAME', '')
+    monkeypatch.setenv('MAIL_PASSWORD', '')
+    monkeypatch.setenv('MAIL_DEFAULT_SENDER', 'noreply@dev-mail.readkeeper.com')
+    monkeypatch.setenv('MAIL_SUPPRESS_SEND', 'True')
+
+@pytest.fixture(autouse=True)
+def mock_mail_send(monkeypatch):
+    """Mock email sending for tests"""
+    def mock_send(self, message):
+        return True
+    
+    monkeypatch.setattr("flask_mail.Mail.send", mock_send)

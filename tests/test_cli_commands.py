@@ -108,29 +108,17 @@ def test_email_test_command(app, db_session, monkeypatch):
 
 def test_email_test_command_failure(app, db_session, monkeypatch):
     """Test email test CLI command when email fails"""
+    from flask_mail import Mail
     runner = CliRunner()
+
+    def mock_send_failure(self, message):
+        raise Exception("Failed to send email")
+
+    monkeypatch.setattr("flask_mail.Mail.send", mock_send_failure)
+
+    # Run the command
+    result = runner.invoke(email_cli, ['test', 'test@example.com'])
     
-    # Disable development mode and enable OAuth2
-    app.config.update({
-        'MAIL_SUPPRESS_SEND': False,
-        'MAIL_USE_OAUTH2': True,
-        'OAUTH_TOKEN_DATA': {
-            'token': 'test_token',
-            'refresh_token': 'test_refresh',
-            'token_uri': 'https://oauth2.googleapis.com/token',
-            'client_id': 'test_client_id',
-            'client_secret': 'test_secret',
-            'scopes': ['https://www.googleapis.com/auth/gmail.send']
-        }
-    })
-    
-    # Mock Gmail API service to raise an exception
-    mock_service = MagicMock()
-    mock_service.users().messages().send.side_effect = Exception("Failed to send email")
-    
-    with patch('utils.email_service.build', return_value=mock_service):
-        # Run command
-        result = runner.invoke(email_cli, ['test', 'test@example.com'])
-        assert result.exit_code == 1  # Command should fail
-        assert "Failed to send test email" in result.output
-        assert "Email sending failed" in result.output 
+    # Verify the command failed
+    assert result.exit_code == 1
+    assert "Failed to send test email" in result.output 

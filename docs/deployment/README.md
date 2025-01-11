@@ -16,17 +16,21 @@ This guide covers the deployment process for the Book Tracker application.
    - PostgreSQL 14+
    - Nginx
    - Let's Encrypt SSL certificate
+   - Postfix mail server
 
 2. Domain and SSL:
    - Registered domain name
-   - DNS configured
+   - DNS configured (including MX records)
    - SSL certificate ready
+   - SPF and DKIM records set up for email
 
 3. Environment:
    - All environment variables set
    - PostgreSQL credentials secured
    - Application secrets generated
-   - OAuth2 credentials configured
+   - Google Books API key configured
+   - Redis configured for rate limiting
+   - Postfix configured for transactional emails
 
 ## Deployment Steps
 
@@ -36,15 +40,15 @@ This guide covers the deployment process for the Book Tracker application.
    sudo apt update && sudo apt upgrade -y
    
    # Install required packages
-   sudo apt install python3-pip postgresql nginx certbot python3-certbot-nginx
+   sudo apt install python3-pip postgresql nginx certbot python3-certbot-nginx redis-server postfix
    ```
 
-2. **OAuth2 Configuration**
-   - Set up Google Cloud Project
-   - Configure OAuth2 consent screen
-   - Create OAuth2 credentials
-   - Add production domain to authorized redirect URIs
-   - Update environment variables with OAuth2 credentials
+2. **Email Server Setup**
+   - Configure Postfix for transactional emails
+   - Set up SPF and DKIM for email authentication
+   - Configure domain MX records
+   - Test email delivery with test script
+   - Set up monitoring for email delivery
 
 3. **Application Setup**
    ```bash

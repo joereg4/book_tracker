@@ -8,8 +8,8 @@
 - PostgreSQL 12 or higher
 - A text editor or IDE (VS Code recommended)
 - Google Books API key
+- Docker and Docker Compose
 - Redis (optional, for rate limiting)
-- Gmail account (for email functionality)
 
 ## Initial Setup
 
@@ -34,112 +34,88 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file from the example:
+4. Start development services:
 ```bash
-cp .env.example .env
+docker-compose up -d
 ```
 
-5. Configure your environment variables in `.env`:
+This will start:
+- MailHog (email testing service)
+  - SMTP: localhost:1026
+  - Web UI: http://localhost:8025
+- Redis (for rate limiting)
+  - localhost:6379
+
+5. Create a `.env.development` file:
+```bash
+cp .env.example .env.development
+```
+
+6. Configure your environment variables in `.env.development`:
 ```plaintext
-# Flask configuration
-FLASK_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(16))')
-APP_URL=http://localhost:5000
+# Flask Configuration
+FLASK_SECRET_KEY=dev-secret-key-change-in-production
 FLASK_ENV=development
 FLASK_DEBUG=1
 
-# Database configuration
-DATABASE_URL=postgresql://localhost/books
+# Database Configuration
+DATABASE_URL=sqlite:///dev.db  # or your PostgreSQL URL
 
-# Google Books API
-GOOGLE_BOOKS_API_KEY=your_google_books_api_key_here
+# Email Configuration (MailHog)
+MAIL_SERVER=localhost
+MAIL_PORT=1026
+MAIL_USE_TLS=False
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_DEFAULT_SENDER=noreply@dev-mail.readkeeper.com
 
-# OAuth2 Configuration
-GOOGLE_OAUTH_CLIENT_ID=your_oauth_client_id
-GOOGLE_OAUTH_CLIENT_SECRET=your_oauth_client_secret
-GOOGLE_OAUTH_REDIRECT_URI=http://localhost:5000/oauth2callback
-
-# Email Configuration
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USERNAME=your_email@gmail.com
-MAIL_USE_OAUTH2=True
-MAIL_DEFAULT_SENDER=noreply@yourdomain.com
+# Rate Limiting
+REDIS_URL=redis://localhost:6379
 ```
 
-6. Set up OAuth2 credentials:
-   - Go to [Google Cloud Console](https://console.cloud.google.com)
-   - Create a new project or select existing one
-   - Enable Gmail API and Google Books API
-   - Configure OAuth2 consent screen
-   - Create OAuth2 credentials (Web application type)
-   - Add authorized redirect URIs
-   - Copy credentials to your `.env` file
+## Testing Email Functionality
 
-6. Initialize the database:
+1. Send a test email:
 ```bash
-flask db upgrade
+python test_smtp.py
 ```
 
-## Email Configuration
-
-### Development Mode
-For development, emails are suppressed by default and logged to the console. To test actual email sending:
-
-1. Set `MAIL_SUPPRESS_SEND=False` in your `.env` file
-2. Configure Gmail OAuth2 credentials:
-   - Create a project in Google Cloud Console
-   - Enable Gmail API
-   - Create OAuth2 credentials
-   - Add authorized redirect URIs
-   - Update `.env` with OAuth2 settings:
-     ```plaintext
-     MAIL_USE_OAUTH2=True
-     MAIL_USERNAME=your-email@gmail.com
-     MAIL_DEFAULT_SENDER=your-email@gmail.com
-     MAIL_OAUTH_CLIENT_ID=your-oauth-client-id
-     MAIL_OAUTH_CLIENT_SECRET=your-oauth-client-secret
-     MAIL_OAUTH_REDIRECT_URI=http://localhost:5000/oauth2callback
-     ```
-
-### Testing Email Functionality
-
-1. Run the email test command:
-```bash
-flask email-cli test your-email@example.com
-```
-
-2. Follow the authorization flow:
-   - Click the authorization URL in the console
-   - Sign in with your Gmail account
-   - Grant permissions
-   - Copy the code from the redirect URL
-   - Run: `flask email-cli authorize <code>`
-
-3. The test email should be sent to your specified address
-
-### Production Setup
-For production:
-1. Set `FLASK_ENV=production`
-2. Set `MAIL_SUPPRESS_SEND=False`
-3. Configure OAuth2 with production credentials
-4. Use a production domain for redirect URIs
+2. View sent emails in MailHog:
+   - Open http://localhost:8025 in your browser
+   - All emails sent during development will be captured here
 
 ## Running Tests
 
-1. Run all tests:
 ```bash
-pytest
+# Run all tests
+python -m pytest tests/
+
+# Run specific test file
+python -m pytest tests/test_email.py
+
+# Run with verbose output
+python -m pytest -v tests/
 ```
 
-2. Run specific test file:
+## Development Workflow
+
+1. Start development services:
 ```bash
-pytest tests/test_email.py
+docker-compose up -d
 ```
 
-3. Run with coverage:
+2. Run the application:
 ```bash
-pytest --cov=.
+flask run
+```
+
+3. Access the application:
+   - Web UI: http://localhost:5000
+   - MailHog: http://localhost:8025
+
+4. Stop development services:
+```bash
+docker-compose down
 ```
 
 ## PostgreSQL Setup

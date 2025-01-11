@@ -20,7 +20,7 @@ A Flask web application for tracking your reading history and discovering new bo
 
 ### User Features
 - Secure user authentication system
-- Password reset via email
+- Transactional email system (welcome emails, password resets)
 - Profile management
 - Export library data (CSV/JSON formats)
 - Customizable user settings
@@ -32,17 +32,24 @@ A Flask web application for tracking your reading history and discovering new bo
 - Category and author statistics
 
 ### Security Features
-- Rate limiting protection
+- Rate limiting protection (Redis-backed)
 - CSRF protection
 - Secure password handling
 - Email verification system
 - Database backup and restore utilities
 
+### Development Features
+- Docker-based development environment
+- MailHog for email testing
+- Redis for rate limiting
+- Comprehensive test suite
+- Development/Production environment separation
+
 ## Prerequisites
 - Python 3.8+
 - pip (Python package installer)
 - Google Books API key
-- SMTP server for email functionality (optional, defaults to console output in development)
+- Docker and Docker Compose (for development environment)
 
 ## Setup
 
@@ -86,6 +93,72 @@ source books/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+### Development Environment
+
+1. Start the development services (email and Redis):
+```bash
+docker-compose up -d
+```
+
+This will start:
+- MailHog (SMTP server for development)
+  - SMTP: localhost:1026
+  - Web UI: http://localhost:8025
+- Redis (for rate limiting)
+  - localhost:6379
+
+2. Create a `.env.development` file:
+```plaintext
+# Flask Configuration
+FLASK_ENV=development
+FLASK_DEBUG=1
+FLASK_SECRET_KEY=dev-secret-key-change-in-production
+
+# Database Configuration
+DATABASE_URL=sqlite:///dev.db
+
+# Email Configuration (MailHog for development)
+MAIL_SERVER=localhost
+MAIL_PORT=1026
+MAIL_USE_TLS=False
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_DEFAULT_SENDER=noreply@dev-mail.readkeeper.com
+
+# Rate Limiting
+REDIS_URL=redis://localhost:6379
+```
+
+### Production Configuration
+
+For production, create a `.env` file:
+```plaintext
+FLASK_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(16))')
+GOOGLE_BOOKS_API_KEY=your_google_books_api_key_here
+
+# Email Configuration (Postfix)
+MAIL_SERVER=localhost
+MAIL_PORT=25
+MAIL_USE_TLS=False
+MAIL_USERNAME=noreply
+MAIL_PASSWORD=your_secure_password
+MAIL_DEFAULT_SENDER=noreply@your-domain.com
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+```
+
+### Testing Email Configuration
+
+You can test the email configuration using the provided test script:
+```bash
+python test_smtp.py
+```
+
+This will send test emails (welcome and password reset) that you can view in:
+- Development: MailHog web interface (http://localhost:8025)
+- Production: Your configured SMTP server
 
 ### Configuration
 
