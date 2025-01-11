@@ -1,8 +1,7 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, current_app
 from models import Book, db
 from flask_login import current_user
-from sqlalchemy import text
-import re
+from sqlalchemy import text, or_, desc
 
 bp = Blueprint('shelf', __name__)
 
@@ -27,51 +26,50 @@ def view(shelf):
         
         # Apply search if provided
         if search_query:
-            # Clean and prepare search terms
-            search_terms = []
-            for term in search_query.lower().split():
-                # Escape special characters
-                term = re.sub(r'[^\w\s]', ' ', term)
-                term = term.strip()
-                if term:
-                    # Add exact match with prefix
-                    search_terms.append(f'"{term}"*')
-                    
-                    # Add common spelling variations
-                    if 'o' in term:
-                        search_terms.append(f'"{term.replace("o", "u")}"*')
-                    if 'u' in term:
-                        search_terms.append(f'"{term.replace("u", "o")}"*')
+            # Check if we're using PostgreSQL or SQLite
+            is_postgres = 'postgresql' in current_app.config['SQLALCHEMY_DATABASE_URI']
             
-            # Join all search patterns with OR
-            search_pattern = ' OR '.join(search_terms)
-            
-            if search_pattern:
-                # Get matching IDs from FTS table
-                sql = text("""
-                    SELECT rowid FROM books_fts 
-                    WHERE books_fts MATCH :pattern 
-                    ORDER BY rank
-                """)
-                matching_ids = [r[0] for r in db.session.execute(sql, {'pattern': search_pattern})]
+            if is_postgres:
+                # Use PostgreSQL's full-text search with existing search_vector
+                search_query_sql = text("plainto_tsquery('books_fts_config', :search_terms)")
                 
-                # Filter books by matching IDs
-                if matching_ids:
-                    query = query.filter(Book.id.in_(matching_ids))
-                else:
-                    # If no FTS matches, return empty result
-                    query = query.filter(Book.id == None)
-
-        # Apply ordering
-        if shelf == 'read':
-            query = query.order_by(
-                Book.date_read.desc().nulls_last(),
-                Book.created_at.desc()
-            )
+                # Add the rank as a column to the query
+                rank_sql = text("ts_rank(search_vector, plainto_tsquery('books_fts_config', :search_terms)) as search_rank")
+                query = query.add_columns(rank_sql)
+                
+                # Add the search filter
+                query = query.filter(
+                    text("search_vector @@ plainto_tsquery('books_fts_config', :search_terms)")
+                ).params(search_terms=search_query)
+                
+                # Order by the rank column
+                query = query.order_by(text("search_rank DESC"))
+                
+                # Execute query and extract just the Book objects
+                results = query.all()
+                books = [r[0] for r in results]
+            else:
+                # SQLite fallback for tests
+                query = query.filter(or_(
+                    Book.title.ilike(f'%{search_query}%'),
+                    Book.authors.ilike(f'%{search_query}%'),
+                    Book.description.ilike(f'%{search_query}%'),
+                    Book.categories.ilike(f'%{search_query}%')
+                ))
+                
+                # Execute query
+                books = query.all()
         else:
-            query = query.order_by(Book.created_at.desc())
-        
-        books = query.all()
+            # If no search, just get all books
+            if shelf == 'read':
+                query = query.order_by(
+                    Book.date_read.desc().nulls_last(),
+                    Book.created_at.desc()
+                )
+            else:
+                query = query.order_by(Book.created_at.desc())
+            
+            books = query.all()
         
         # Get the count for the search results message
         count = len(books)
