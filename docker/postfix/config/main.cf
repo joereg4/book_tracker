@@ -1,0 +1,40 @@
+# Basic configuration
+myhostname = dev-mail.readkeeper.com
+mydomain = dev-mail.readkeeper.com
+myorigin = $mydomain
+inet_interfaces = all
+inet_protocols = ipv4
+
+# Mail delivery configuration
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+mynetworks = 127.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+relay_domains = $mydestination
+
+# TLS parameters
+smtpd_use_tls = yes
+smtpd_tls_security_level = may
+smtpd_tls_auth_only = yes
+smtp_tls_security_level = may
+
+# Authentication
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_local_domain = $myhostname
+broken_sasl_auth_clients = yes
+
+# Restrictions
+smtpd_recipient_restrictions = 
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination
+
+# Logging
+debug_peer_level = 2
+debugger_command =
+    PATH=/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin
+    ddd $daemon_directory/$process_name $process_id & sleep 5
+
+# Additional Settings
+biff = no
+append_dot_mydomain = no
+readme_directory = no 
