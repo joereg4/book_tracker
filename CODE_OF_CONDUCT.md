@@ -63,7 +63,7 @@ reported through the following channels:
 
 1. **Private Issue Report**: Use our [Code of Conduct violation report form](https://github.com/joereg4/book_tracker/issues/new?template=code_of_conduct_violation.yml) which will only be visible to project maintainers.
 
-2. **Email**: For sensitive matters, you can email the project maintainers directly at joereg4@gmail.com.
+2. **Email**: For sensitive matters, you can email the project maintainers directly at conduct@readkeeper.com.
 
 All complaints will be reviewed and investigated promptly and fairly. All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

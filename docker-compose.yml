@@ -5,12 +5,12 @@ services:
     ports:
       - "587:587"  # SMTP with STARTTLS
     environment:
-      - ALLOWED_SENDER_DOMAINS=dev-mail.readkeeper.com
-      - POSTFIX_myhostname=dev-mail.readkeeper.com
-      - POSTFIX_mydomain=dev-mail.readkeeper.com
+      - ALLOWED_SENDER_DOMAINS=dev-mail.example.com
+      - POSTFIX_myhostname=dev-mail.example.com
+      - POSTFIX_mydomain=dev-mail.example.com
       - POSTFIX_debug_peer_level=2
       - RELAYHOST=
-      - SMTP_SERVER=dev-mail.readkeeper.com
+      - SMTP_SERVER=dev-mail.example.com
       - SMTP_PORT=587
       - SMTP_USERNAME=noreply
       - SMTP_PASSWORD=your_secure_password
