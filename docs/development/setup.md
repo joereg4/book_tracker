@@ -43,8 +43,12 @@ This will start:
 - MailHog (email testing service)
   - SMTP: localhost:1026
   - Web UI: http://localhost:8025
+  - All development emails will be captured here
+  - No real emails will be sent
 - Redis (for rate limiting)
   - localhost:6379
+
+Note: MailHog is used in development to catch all outgoing emails. This ensures no real emails are sent during development. You can view all sent emails in the MailHog web interface.
 
 5. Create a `.env.development` file:
 ```bash
