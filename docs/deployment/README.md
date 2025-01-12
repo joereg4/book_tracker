@@ -275,12 +275,12 @@ See `backup_restore.md` for detailed procedures on:
 The application uses Gmail's OAuth2 for sending emails, with the following setup:
 
 1. Gmail Account Setup:
-   - Primary email: `noreply.readkeeper@gmail.com`
+   - Primary email: `noreply@example.com`
    - Used with OAuth2 for secure email sending
 
 2. Domain Email Forwarding (Cloudflare):
-   - Public-facing email: `noreply@readkeeper.com`
-   - Forwards to: `noreply.readkeeper@gmail.com`
+   - Public-facing email: `noreply@yourdomain.com`
+   - Forwards to: `noreply@example.com`
    - Configured through Cloudflare Email Routing
 
 3. OAuth2 Configuration:
@@ -291,8 +291,8 @@ The application uses Gmail's OAuth2 for sending emails, with the following setup
    MAIL_PORT=587
    MAIL_USE_TLS=True
    MAIL_USE_OAUTH2=True
-   MAIL_USERNAME=noreply.readkeeper@gmail.com
-   MAIL_DEFAULT_SENDER=noreply@readkeeper.com
+   MAIL_USERNAME=noreply@example.com
+   MAIL_DEFAULT_SENDER=noreply@yourdomain.com
    MAIL_OAUTH_CLIENT_ID=your_oauth_client_id
    MAIL_OAUTH_CLIENT_SECRET=your_oauth_client_secret
    MAIL_OAUTH_REFRESH_TOKEN=your_oauth_refresh_token
@@ -301,7 +301,7 @@ The application uses Gmail's OAuth2 for sending emails, with the following setup
 4. Email Testing:
    ```bash
    # Test email configuration
-   flask email-cli test admin@your-domain.com
+   flask email-cli test user@example.com
    
    # Check logs for errors
    sudo journalctl -u book_tracker.service | grep "email"

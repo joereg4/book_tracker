@@ -18,16 +18,15 @@ class Config:
         raise ValueError("No DATABASE_URL set in environment")
     
     # Email config with support for both Gmail OAuth2 and Postfix
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'localhost')  # Default to local Postfix
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 25))  # Default Postfix port
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'False').lower() == 'true'
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')  # For Postfix auth if needed
-    MAIL_USE_OAUTH2 = os.environ.get('MAIL_USE_OAUTH2', 'False').lower() == 'true'
-    MAIL_OAUTH_CLIENT_ID = os.environ.get('MAIL_OAUTH_CLIENT_ID')
-    MAIL_OAUTH_CLIENT_SECRET = os.environ.get('MAIL_OAUTH_CLIENT_SECRET')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@dev-mail.readkeeper.com')
-    MAIL_SUPPRESS_SEND = os.environ.get('FLASK_ENV') != 'production'
+    MAIL_SERVER = '127.0.0.1'  # Use IP instead of localhost
+    MAIL_PORT = 1026  # MailHog SMTP port
+    MAIL_USE_TLS = False
+    MAIL_USERNAME = None
+    MAIL_PASSWORD = None
+    MAIL_USE_SSL = False
+    MAIL_DEFAULT_SENDER = 'test@example.com'  # Use simple email address
+    MAIL_SUPPRESS_SEND = False
+    MAIL_USE_OAUTH2 = False
     
     # Rate limiting
     RATELIMIT_STORAGE_URI = os.environ.get('REDIS_URL', 'redis://localhost:6379')
