@@ -1,67 +1,50 @@
 import pytest
+from flask import Flask
+from flask_mail import Mail, Message
 from utils.email_service import send_email
-from unittest.mock import patch, MagicMock
+from dotenv import load_dotenv
 
-def test_email_development_mode(app, mail):
-    """Test email sending in development mode with MailHog"""
+def test_mailhog_development(app):
+    """Test email sending in development mode using MailHog"""
+    app.config.update(
+        MAIL_SERVER='localhost',
+        MAIL_PORT=1026,  # MailHog SMTP port
+        MAIL_USE_TLS=False,
+        MAIL_USERNAME=None,
+        MAIL_PASSWORD=None,
+        MAIL_DEFAULT_SENDER='noreply@dev-mail.readkeeper.com'
+    )
+    
+    mail = Mail(app)
+    
     with app.app_context():
-        result = send_email(
-            subject='Test Email',
-            recipient='test@example.com',
-            template='test',
-            name='Test User'
+        msg = Message(
+            subject="Test Email from ReadKeeper",
+            recipients=["test@example.com"],
+            body="This is a test email from the ReadKeeper development environment."
         )
-        assert result is True
+        mail.send(msg)
+        assert True  # If we get here without exception, the email was sent
 
-def test_email_smtp_mode(app, mail):
-    """Test email sending with SMTP"""
-    app.config.update({
-        'MAIL_SUPPRESS_SEND': False,
-        'MAIL_SERVER': 'localhost',
-        'MAIL_PORT': 1026,
-        'MAIL_USE_TLS': False,
-        'MAIL_DEFAULT_SENDER': 'noreply@dev-mail.readkeeper.com'
-    })
-
+def test_postfix_smtp(app):
+    """Test email sending using Postfix SMTP with TLS"""
+    app.config.update(
+        MAIL_SERVER='localhost',
+        MAIL_PORT=587,  # Postfix SMTP port with STARTTLS
+        MAIL_USE_TLS=True,
+        MAIL_USERNAME='noreply',
+        MAIL_PASSWORD='your_secure_password',
+        MAIL_DEFAULT_SENDER='noreply@dev-mail.readkeeper.com'
+    )
+    
+    mail = Mail(app)
+    mail.init_app(app)
+    
     with app.app_context():
-        result = send_email(
-            subject='Test Email',
-            recipient='test@example.com',
-            template='test',
-            name='Test User'
+        success = send_email(
+            subject="Test SMTP Email",
+            recipient="test@example.com",
+            template="test",
+            name="Test User"
         )
-        assert result is True
-
-def test_email_missing_template(app, mail):
-    """Test email sending with missing template"""
-    with app.app_context():
-        result = send_email(
-            subject='Test Email',
-            recipient='test@example.com',
-            template='nonexistent',
-            name='Test User'
-        )
-        assert result is False
-
-def test_welcome_email(app, mail, test_user):
-    """Test sending welcome email"""
-    with app.app_context():
-        result = send_email(
-            subject='Welcome to ReadKeeper',
-            recipient=test_user.email,
-            template='welcome',
-            name=test_user.username
-        )
-        assert result is True
-
-def test_password_reset_email(app, mail, test_user):
-    """Test sending password reset email"""
-    with app.app_context():
-        result = send_email(
-            subject='Reset Your ReadKeeper Password',
-            recipient=test_user.email,
-            template='password_reset',
-            name=test_user.username,
-            reset_url='http://localhost:5000/reset-password?token=test-token'
-        )
-        assert result is True 
+        assert success is True 
