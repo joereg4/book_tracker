@@ -26,6 +26,22 @@ services:
     networks:
       - readkeeper_net
 
+  # Add PostgreSQL database
+  db:
+    image: postgres:15-alpine
+    container_name: readkeeper_postgres
+    environment:
+      - POSTGRES_USER=books
+      - POSTGRES_PASSWORD=books
+      - POSTGRES_DB=books
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - readkeeper_net
+
   # Add Redis for rate limiting
   redis:
     image: redis:alpine
@@ -35,7 +51,7 @@ services:
     networks:
       - readkeeper_net
 
-  # Add Mailhog for catching development emails
+  # Add MailHog for email testing
   mailhog:
     image: mailhog/mailhog
     container_name: readkeeper_mailhog
@@ -45,6 +61,25 @@ services:
     networks:
       - readkeeper_net
 
+  app:
+    build: .
+    container_name: readkeeper_app
+    environment:
+      - FLASK_APP=app.py
+      - DATABASE_URL=postgresql://books:books@readkeeper_postgres:5432/books
+      - FLASK_DEBUG=1
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    networks:
+      - readkeeper_net
+
 networks:
   readkeeper_net:
-    name: readkeeper_network 
+    name: readkeeper_network
+
+volumes:
+  postgres_data: 

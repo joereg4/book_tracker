@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
+CREATE USER books WITH PASSWORD 'books';
+ALTER USER books CREATEDB;
+CREATE DATABASE books OWNER books;
+\c books books
+CREATE EXTENSION IF NOT EXISTS unaccent;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO books;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO books;
+EOSQL 

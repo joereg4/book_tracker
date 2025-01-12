@@ -42,6 +42,23 @@ def signup():
             flash('Passwords do not match.', 'error')
             return redirect(url_for('auth.signup'))
 
+        # Validate password strength
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'error')
+            return redirect(url_for('auth.signup'))
+        
+        if not any(c.isalpha() for c in password):
+            flash('Password must contain at least one letter.', 'error')
+            return redirect(url_for('auth.signup'))
+            
+        if not any(c.isdigit() for c in password):
+            flash('Password must contain at least one number.', 'error')
+            return redirect(url_for('auth.signup'))
+            
+        if not any(c in '@$!%*#?&' for c in password):
+            flash('Password must contain at least one special character (@$!%*#?&).', 'error')
+            return redirect(url_for('auth.signup'))
+
         # Check if username exists
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'error')

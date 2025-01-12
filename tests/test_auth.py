@@ -16,8 +16,8 @@ def test_signup_success(client, db_session):
     response = client.post('/signup', data={
         'username': 'newuser',
         'email': 'new@example.com',
-        'password': 'testpass123',
-        'confirm_password': 'testpass123',
+        'password': 'Test123!@#',  # Strong password meeting all requirements
+        'confirm_password': 'Test123!@#',
         'csrf_token': csrf_token
     }, follow_redirects=True)
     
@@ -28,7 +28,7 @@ def test_signup_success(client, db_session):
     user = User.query.filter_by(username='newuser').first()
     assert user is not None
     assert user.email == 'new@example.com'
-    assert check_password_hash(user.password, 'testpass123')
+    assert check_password_hash(user.password, 'Test123!@#')
 
 def test_signup_validation(client, db_session):
     """Test signup validation"""
@@ -46,17 +46,62 @@ def test_signup_validation(client, db_session):
     response = client.post('/signup', data={
         'username': 'testuser',
         'email': 'test@example.com',
-        'password': 'pass1',
-        'confirm_password': 'pass2',
+        'password': 'Test123!@#',
+        'confirm_password': 'Test123!@#different',
         'csrf_token': csrf_token
     }, follow_redirects=True)
     assert b'Passwords do not match' in response.data
+
+def test_password_strength(client, db_session):
+    """Test password strength requirements"""
+    response = client.get('/signup')
+    csrf_token = get_csrf_token(response)
+    
+    # Test too short password
+    response = client.post('/signup', data={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'Abc1!',
+        'confirm_password': 'Abc1!',
+        'csrf_token': csrf_token
+    }, follow_redirects=True)
+    assert b'Password must be at least 8 characters long' in response.data
+    
+    # Test missing letter
+    response = client.post('/signup', data={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': '12345678!@#',
+        'confirm_password': '12345678!@#',
+        'csrf_token': csrf_token
+    }, follow_redirects=True)
+    assert b'Password must contain at least one letter' in response.data
+    
+    # Test missing number
+    response = client.post('/signup', data={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'Abcdefgh!@#',
+        'confirm_password': 'Abcdefgh!@#',
+        'csrf_token': csrf_token
+    }, follow_redirects=True)
+    assert b'Password must contain at least one number' in response.data
+    
+    # Test missing special character
+    response = client.post('/signup', data={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'Abcdefgh123',
+        'confirm_password': 'Abcdefgh123',
+        'csrf_token': csrf_token
+    }, follow_redirects=True)
+    assert b'Password must contain at least one special character' in response.data
     
     # Test duplicate username
     user = User(
         username='existinguser',
         email='existing@example.com',
-        password=generate_password_hash('testpass')
+        password=generate_password_hash('Test123!@#')
     )
     db_session.add(user)
     db_session.commit()
@@ -64,8 +109,8 @@ def test_signup_validation(client, db_session):
     response = client.post('/signup', data={
         'username': 'existinguser',
         'email': 'new@example.com',
-        'password': 'testpass123',
-        'confirm_password': 'testpass123',
+        'password': 'Test123!@#',
+        'confirm_password': 'Test123!@#',
         'csrf_token': csrf_token
     }, follow_redirects=True)
     assert b'Username already exists' in response.data
