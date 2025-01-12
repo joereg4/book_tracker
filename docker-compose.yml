@@ -3,14 +3,23 @@ services:
     image: boky/postfix
     container_name: readkeeper_postfix
     ports:
-      - "1025:25"  # Using port 1025 to avoid conflicts with system services
-      - "1587:587"
+      - "587:587"  # SMTP with STARTTLS
     environment:
       - ALLOWED_SENDER_DOMAINS=dev-mail.readkeeper.com
       - POSTFIX_myhostname=dev-mail.readkeeper.com
       - POSTFIX_mydomain=dev-mail.readkeeper.com
       - POSTFIX_debug_peer_level=2
       - RELAYHOST=
+      - SMTP_SERVER=dev-mail.readkeeper.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=noreply
+      - SMTP_PASSWORD=your_secure_password
+      - SMTP_NETWORKS=0.0.0.0/0
+      - POSTFIX_smtpd_sasl_type=dovecot
+      - POSTFIX_smtpd_sasl_path=private/auth
+      - POSTFIX_smtpd_sasl_auth_enable=yes
+      - POSTFIX_smtpd_sasl_security_options=noanonymous
+      - POSTFIX_smtpd_tls_auth_only=yes
     volumes:
       - ./docker/postfix/logs:/var/log
     restart: unless-stopped

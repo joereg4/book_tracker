@@ -16,6 +16,16 @@ smtpd_tls_security_level = may
 smtpd_tls_auth_only = yes
 smtp_tls_security_level = may
 
+# Enable submission port (587)
+submission_enable = yes
+smtpd_submission_restriction = permit_sasl_authenticated,reject
+
+# Additional TLS settings for submission
+smtpd_tls_cert_file = /etc/ssl/certs/ssl-cert-snakeoil.pem
+smtpd_tls_key_file = /etc/ssl/private/ssl-cert-snakeoil.key
+smtpd_tls_protocols = !SSLv2,!SSLv3,!TLSv1,!TLSv1.1
+smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3,!TLSv1,!TLSv1.1
+
 # Authentication
 smtpd_sasl_auth_enable = yes
 smtpd_sasl_security_options = noanonymous
